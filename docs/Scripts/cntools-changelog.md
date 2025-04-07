@@ -6,6 +6,26 @@ All notable changes to this tool will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.4.1] - 2025-04-05
+#### Fixed
+- Proper check for if a HW device is used in pool update
+
+## [13.4.0] - 2025-03-09
+#### Added
+- Support was added for the pool Calidus key according to CIP-88 standard.
+#### Changed
+- Governance proposal list was updated to be more performant by only loading and processing data as you navigate.
+#### Fixed
+- Fix for kesExpiration helper function
+
+## [13.3.3] - 2025-01-10
+#### Fixed
+- Drop deprecated refences to `${NETWORK_ERA}`
+
+## [13.3.2] - 2025-01-09
+#### Fixed
+- Corrected predefined Drep wallet data querying in light (api) mode - should address StringToDecodeMissingSeparatorChar errors
+
 ## [13.3.1] - 2024-11-25
 #### Fixed
 - Corrected KES expiration information calculation on cntools launch, pool -> list and pool -> show screens

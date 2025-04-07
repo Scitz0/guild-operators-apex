@@ -447,12 +447,12 @@ function main {
                       println "      Choose another name or delete the existing one"
                       waitToProceed && continue
                     fi
-                    println ACTION "${CCLI} ${NETWORK_ERA} address key-gen --verification-key-file ${payment_vk_file} --signing-key-file ${payment_sk_file}"
-                    if ! stdout=$(${CCLI} ${NETWORK_ERA} address key-gen --verification-key-file "${payment_vk_file}" --signing-key-file "${payment_sk_file}" 2>&1); then
+                    println ACTION "${CCLI} address key-gen --verification-key-file ${payment_vk_file} --signing-key-file ${payment_sk_file}"
+                    if ! stdout=$(${CCLI} address key-gen --verification-key-file "${payment_vk_file}" --signing-key-file "${payment_sk_file}" 2>&1); then
                       println ERROR "\n${FG_RED}ERROR${NC}: failure during payment key creation!\n${stdout}"; safeDel "${WALLET_FOLDER}/${wallet_name}"; waitToProceed && continue
                     fi
-                    println ACTION "${CCLI} ${NETWORK_ERA} stake-address key-gen --verification-key-file ${stake_vk_file} --signing-key-file ${stake_sk_file}"
-                    if ! stdout=$(${CCLI} ${NETWORK_ERA} stake-address key-gen --verification-key-file "${stake_vk_file}" --signing-key-file "${stake_sk_file}" 2>&1); then
+                    println ACTION "${CCLI} latest stake-address key-gen --verification-key-file ${stake_vk_file} --signing-key-file ${stake_sk_file}"
+                    if ! stdout=$(${CCLI} latest stake-address key-gen --verification-key-file "${stake_vk_file}" --signing-key-file "${stake_sk_file}" 2>&1); then
                       println ERROR "\n${FG_RED}ERROR${NC}: failure during stake key creation!\n${stdout}"; safeDel "${WALLET_FOLDER}/${wallet_name}"; waitToProceed && continue
                     fi
                     println ACTION "${CCLI} conway governance drep key-gen --verification-key-file ${drep_vk_file} --signing-key-file ${drep_sk_file}"
@@ -467,12 +467,12 @@ function main {
                     if ! stdout=$(${CCLI} conway governance committee key-gen-hot --verification-key-file "${cc_hot_vk_file}" --signing-key-file "${cc_hot_sk_file}" 2>&1); then
                       println ERROR "\n${FG_RED}ERROR${NC}: failure during governance committee hot key creation!\n${stdout}"; waitToProceed && continue
                     fi
-                    println ACTION "${CCLI} ${NETWORK_ERA} address key-gen --verification-key-file ${ms_payment_vk_file} --signing-key-file ${ms_payment_sk_file}"
-                    if ! stdout=$(${CCLI} ${NETWORK_ERA} address key-gen --verification-key-file "${ms_payment_vk_file}" --signing-key-file "${ms_payment_sk_file}" 2>&1); then
+                    println ACTION "${CCLI} address key-gen --verification-key-file ${ms_payment_vk_file} --signing-key-file ${ms_payment_sk_file}"
+                    if ! stdout=$(${CCLI} address key-gen --verification-key-file "${ms_payment_vk_file}" --signing-key-file "${ms_payment_sk_file}" 2>&1); then
                       println ERROR "\n${FG_RED}ERROR${NC}: failure during MultiSig payment key creation!\n${stdout}"; waitToProceed && continue
                     fi
-                    println ACTION "${CCLI} ${NETWORK_ERA} stake-address key-gen --verification-key-file ${ms_stake_vk_file} --signing-key-file ${ms_stake_sk_file}"
-                    if ! stdout=$(${CCLI} ${NETWORK_ERA} stake-address key-gen --verification-key-file "${ms_stake_vk_file}" --signing-key-file "${ms_stake_sk_file}" 2>&1); then
+                    println ACTION "${CCLI} latest stake-address key-gen --verification-key-file ${ms_stake_vk_file} --signing-key-file ${ms_stake_sk_file}"
+                    if ! stdout=$(${CCLI} latest stake-address key-gen --verification-key-file "${ms_stake_vk_file}" --signing-key-file "${ms_stake_sk_file}" 2>&1); then
                       println ERROR "\n${FG_RED}ERROR${NC}: failure during MultiSig stake key creation!\n${stdout}"; waitToProceed && continue
                     fi
                     println ACTION "${CCLI} conway governance drep key-gen --verification-key-file ${ms_drep_vk_file} --signing-key-file ${ms_drep_sk_file}"
@@ -1862,9 +1862,10 @@ function main {
 						" ) Rotate   - rotate pool KES keys"\
 						" ) Decrypt  - remove write protection and decrypt pool"\
 						" ) Encrypt  - encrypt pool cold keys and make all files immutable"\
+						" ) Calidus  - register / rotate pool calidus keys (CIP-88 v2 hot pool keys)"\
 						"~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
           println DEBUG " Select Pool Operation\n"
-          select_opt "[n] New" "[i] Import" "[r] Register" "[m] Modify" "[x] Retire" "[l] List" "[s] Show" "[o] Rotate" "[d] Decrypt" "[e] Encrypt" "[h] Home"
+          select_opt "[n] New" "[i] Import" "[r] Register" "[m] Modify" "[x] Retire" "[l] List" "[s] Show" "[o] Rotate" "[d] Decrypt" "[e] Encrypt" "[c] Calidus" "[h] Home"
           case $? in
             0) SUBCOMMAND="new" ;;
             1) SUBCOMMAND="import" ;;
@@ -1876,7 +1877,8 @@ function main {
             7) SUBCOMMAND="rotate" ;;
             8) SUBCOMMAND="decrypt" ;;
             9) SUBCOMMAND="encrypt" ;;
-            10) break ;;
+            10) SUBCOMMAND="calidus" ;;
+            11) break ;;
           esac
           case $SUBCOMMAND in
             new)
@@ -1905,21 +1907,21 @@ function main {
                 println ERROR "      Choose another name or delete the existing one"
                 waitToProceed && continue
               fi
-              println ACTION "${CCLI} ${NETWORK_ERA} node key-gen-KES --verification-key-file ${pool_hotkey_vk_file} --signing-key-file ${pool_hotkey_sk_file}"
-              if ! stdout=$(${CCLI} ${NETWORK_ERA} node key-gen-KES --verification-key-file "${pool_hotkey_vk_file}" --signing-key-file "${pool_hotkey_sk_file}" 2>&1); then
+              println ACTION "${CCLI} node key-gen-KES --verification-key-file ${pool_hotkey_vk_file} --signing-key-file ${pool_hotkey_sk_file}"
+              if ! stdout=$(${CCLI} node key-gen-KES --verification-key-file "${pool_hotkey_vk_file}" --signing-key-file "${pool_hotkey_sk_file}" 2>&1); then
                 println ERROR "\n${FG_RED}ERROR${NC}: failure during KES key creation!\n${stdout}"; waitToProceed && continue
               fi
               if [ -f "${POOL_FOLDER}-pregen/${pool_name}/${POOL_ID_FILENAME}" ]; then
                 mv ${POOL_FOLDER}'-pregen/'${pool_name}/* ${POOL_FOLDER}/${pool_name}/
                 rm -r ${POOL_FOLDER}'-pregen/'${pool_name}
               else
-                println ACTION "${CCLI} ${NETWORK_ERA} node key-gen --cold-verification-key-file ${pool_coldkey_vk_file} --cold-signing-key-file ${pool_coldkey_sk_file} --operational-certificate-issue-counter-file ${pool_opcert_counter_file}"
-                if ! stdout=$(${CCLI} ${NETWORK_ERA} node key-gen --cold-verification-key-file "${pool_coldkey_vk_file}" --cold-signing-key-file "${pool_coldkey_sk_file}" --operational-certificate-issue-counter-file "${pool_opcert_counter_file}" 2>&1); then
+                println ACTION "${CCLI} node key-gen --cold-verification-key-file ${pool_coldkey_vk_file} --cold-signing-key-file ${pool_coldkey_sk_file} --operational-certificate-issue-counter-file ${pool_opcert_counter_file}"
+                if ! stdout=$(${CCLI} node key-gen --cold-verification-key-file "${pool_coldkey_vk_file}" --cold-signing-key-file "${pool_coldkey_sk_file}" --operational-certificate-issue-counter-file "${pool_opcert_counter_file}" 2>&1); then
                   println ERROR "\n${FG_RED}ERROR${NC}: failure during operational certificate counter file creation!\n${stdout}"; waitToProceed && continue
                 fi
               fi
-              println ACTION "${CCLI} ${NETWORK_ERA} node key-gen-VRF --verification-key-file ${pool_vrf_vk_file} --signing-key-file ${pool_vrf_sk_file}"
-              if ! stdout=$(${CCLI} ${NETWORK_ERA} node key-gen-VRF --verification-key-file "${pool_vrf_vk_file}" --signing-key-file "${pool_vrf_sk_file}" 2>&1); then
+              println ACTION "${CCLI} node key-gen-VRF --verification-key-file ${pool_vrf_vk_file} --signing-key-file ${pool_vrf_sk_file}"
+              if ! stdout=$(${CCLI} node key-gen-VRF --verification-key-file "${pool_vrf_vk_file}" --signing-key-file "${pool_vrf_sk_file}" 2>&1); then
                 println ERROR "\n${FG_RED}ERROR${NC}: failure during VRF key creation!\n${stdout}"; waitToProceed && continue
               fi
               chmod 600 "${POOL_FOLDER}/${pool_name}/"*
@@ -1957,13 +1959,13 @@ function main {
                 waitToProceed && continue
               fi
 
-              println ACTION "${CCLI} ${NETWORK_ERA} node key-gen-KES --verification-key-file ${pool_hotkey_vk_file} --signing-key-file ${pool_hotkey_sk_file}"
-              if ! stdout=$(${CCLI} ${NETWORK_ERA} node key-gen-KES --verification-key-file "${pool_hotkey_vk_file}" --signing-key-file "${pool_hotkey_sk_file}" 2>&1); then
+              println ACTION "${CCLI} node key-gen-KES --verification-key-file ${pool_hotkey_vk_file} --signing-key-file ${pool_hotkey_sk_file}"
+              if ! stdout=$(${CCLI} node key-gen-KES --verification-key-file "${pool_hotkey_vk_file}" --signing-key-file "${pool_hotkey_sk_file}" 2>&1); then
                 println ERROR "\n${FG_RED}ERROR${NC}: failure during KES key creation!\n${stdout}"; waitToProceed && continue
               fi
 
-              println ACTION "${CCLI} ${NETWORK_ERA} node key-gen-VRF --verification-key-file ${pool_vrf_vk_file} --signing-key-file ${pool_vrf_sk_file}"
-              if ! stdout=$(${CCLI} ${NETWORK_ERA} node key-gen-VRF --verification-key-file "${pool_vrf_vk_file}" --signing-key-file "${pool_vrf_sk_file}" 2>&1); then
+              println ACTION "${CCLI} node key-gen-VRF --verification-key-file ${pool_vrf_vk_file} --signing-key-file ${pool_vrf_sk_file}"
+              if ! stdout=$(${CCLI} node key-gen-VRF --verification-key-file "${pool_vrf_vk_file}" --signing-key-file "${pool_vrf_sk_file}" 2>&1); then
                 println ERROR "\n${FG_RED}ERROR${NC}: failure during VRF key creation!\n${stdout}"; waitToProceed && continue
               fi
 
@@ -2492,8 +2494,8 @@ function main {
                           return 1
                         fi
                     else
-                      println ACTION "${CCLI} ${NETWORK_ERA} node issue-op-cert --kes-verification-key-file ${pool_hotkey_vk_file} --cold-signing-key-file ${pool_coldkey_sk_file} --operational-certificate-issue-counter-file ${pool_opcert_counter_file} --kes-period ${current_kes_period} --out-file ${pool_opcert_file}"
-                      if ! stdout=$(${CCLI} ${NETWORK_ERA} node issue-op-cert --kes-verification-key-file "${pool_hotkey_vk_file}" --cold-signing-key-file "${pool_coldkey_sk_file}" --operational-certificate-issue-counter-file "${pool_opcert_counter_file}" --kes-period "${current_kes_period}" --out-file "${pool_opcert_file}" 2>&1); then
+                      println ACTION "${CCLI} node issue-op-cert --kes-verification-key-file ${pool_hotkey_vk_file} --cold-signing-key-file ${pool_coldkey_sk_file} --operational-certificate-issue-counter-file ${pool_opcert_counter_file} --kes-period ${current_kes_period} --out-file ${pool_opcert_file}"
+                      if ! stdout=$(${CCLI} node issue-op-cert --kes-verification-key-file "${pool_hotkey_vk_file}" --cold-signing-key-file "${pool_coldkey_sk_file}" --operational-certificate-issue-counter-file "${pool_opcert_counter_file}" --kes-period "${current_kes_period}" --out-file "${pool_opcert_file}" 2>&1); then
                         println ERROR "\n${FG_RED}ERROR${NC}: failure during operational certificate creation!\n${stdout}"; waitToProceed && continue
                       fi
                     fi
@@ -2512,8 +2514,8 @@ function main {
               fi
 
               println LOG "creating registration certificate"
-              println ACTION "${CCLI} ${NETWORK_ERA} stake-pool registration-certificate --cold-verification-key-file ${pool_coldkey_vk_file} --vrf-verification-key-file ${pool_vrf_vk_file} --pool-pledge ${pledge_lovelace} --pool-cost ${cost_lovelace} --pool-margin ${margin_fraction} --pool-reward-account-verification-key-file ${reward_stake_vk_file} --pool-owner-stake-verification-key-file ${owner_stake_vk_file} ${multi_owner_output} --metadata-url ${meta_json_url} --metadata-hash \$\(${CCLI} ${NETWORK_ERA} stake-pool metadata-hash --pool-metadata-file ${pool_meta_file} \) ${relay_output} ${NETWORK_IDENTIFIER} --out-file ${pool_regcert_file}"
-              if ! stdout=$(${CCLI} ${NETWORK_ERA} stake-pool registration-certificate --cold-verification-key-file "${pool_coldkey_vk_file}" --vrf-verification-key-file "${pool_vrf_vk_file}" --pool-pledge ${pledge_lovelace} --pool-cost ${cost_lovelace} --pool-margin ${margin_fraction} --pool-reward-account-verification-key-file "${reward_stake_vk_file}" --pool-owner-stake-verification-key-file "${owner_stake_vk_file}" ${multi_owner_output} --metadata-url "${meta_json_url}" --metadata-hash "$(${CCLI} ${NETWORK_ERA} stake-pool metadata-hash --pool-metadata-file ${pool_meta_file} )" ${relay_output} ${NETWORK_IDENTIFIER} --out-file "${pool_regcert_file}" 2>&1); then
+              println ACTION "${CCLI} latest stake-pool registration-certificate --cold-verification-key-file ${pool_coldkey_vk_file} --vrf-verification-key-file ${pool_vrf_vk_file} --pool-pledge ${pledge_lovelace} --pool-cost ${cost_lovelace} --pool-margin ${margin_fraction} --pool-reward-account-verification-key-file ${reward_stake_vk_file} --pool-owner-stake-verification-key-file ${owner_stake_vk_file} ${multi_owner_output} --metadata-url ${meta_json_url} --metadata-hash \$\(${CCLI} latest stake-pool metadata-hash --pool-metadata-file ${pool_meta_file} \) ${relay_output} ${NETWORK_IDENTIFIER} --out-file ${pool_regcert_file}"
+              if ! stdout=$(${CCLI} latest stake-pool registration-certificate --cold-verification-key-file "${pool_coldkey_vk_file}" --vrf-verification-key-file "${pool_vrf_vk_file}" --pool-pledge ${pledge_lovelace} --pool-cost ${cost_lovelace} --pool-margin ${margin_fraction} --pool-reward-account-verification-key-file "${reward_stake_vk_file}" --pool-owner-stake-verification-key-file "${owner_stake_vk_file}" ${multi_owner_output} --metadata-url "${meta_json_url}" --metadata-hash "$(${CCLI} latest stake-pool metadata-hash --pool-metadata-file ${pool_meta_file} )" ${relay_output} ${NETWORK_IDENTIFIER} --out-file "${pool_regcert_file}" 2>&1); then
                 println ERROR "\n${FG_RED}ERROR${NC}: failure during stake pool registration certificate creation!\n${stdout}"; waitToProceed && continue
               fi
 
@@ -2525,8 +2527,8 @@ function main {
                   waitToProceed "press any key to continue"
                 else
                   println LOG "creating delegation certificate for main owner wallet"
-                  println ACTION "${CCLI} ${NETWORK_ERA} stake-address stake-delegation-certificate --stake-verification-key-file ${owner_stake_vk_file} --cold-verification-key-file ${pool_coldkey_vk_file} --out-file ${owner_delegation_cert_file}"
-                  if ! stdout=$(${CCLI} ${NETWORK_ERA} stake-address stake-delegation-certificate --stake-verification-key-file "${owner_stake_vk_file}" --cold-verification-key-file "${pool_coldkey_vk_file}" --out-file "${owner_delegation_cert_file}" 2>&1); then
+                  println ACTION "${CCLI} latest stake-address stake-delegation-certificate --stake-verification-key-file ${owner_stake_vk_file} --cold-verification-key-file ${pool_coldkey_vk_file} --out-file ${owner_delegation_cert_file}"
+                  if ! stdout=$(${CCLI} latest stake-address stake-delegation-certificate --stake-verification-key-file "${owner_stake_vk_file}" --cold-verification-key-file "${pool_coldkey_vk_file}" --out-file "${owner_delegation_cert_file}" 2>&1); then
                     println ERROR "\n${FG_RED}ERROR${NC}: failure during stake delegation certificate creation!\n${stdout}"; waitToProceed && continue
                   fi
                   delegate_owner_wallet='Y'
@@ -2666,7 +2668,7 @@ function main {
               echo
               println DEBUG "Select pool to retire"
               if [[ ${op_mode} = "online" ]]; then
-                selectPool "${pool_filter}" "${POOL_COLDKEY_VK_FILENAME}"
+                selectPool "all" "${POOL_COLDKEY_VK_FILENAME}"
                 case $? in
                   1) waitToProceed; continue ;;
                   2) continue ;;
@@ -2677,7 +2679,7 @@ function main {
                   3) println ERROR "${FG_RED}ERROR${NC}: signing keys missing from pool!" && waitToProceed && continue ;;
                 esac
               else
-                selectPool "${pool_filter}" "${POOL_COLDKEY_VK_FILENAME}"
+                selectPool "all" "${POOL_COLDKEY_VK_FILENAME}"
                 case $? in
                   1) waitToProceed; continue ;;
                   2) continue ;;
@@ -2755,8 +2757,8 @@ function main {
               pool_deregcert_file="${POOL_FOLDER}/${pool_name}/${POOL_DEREGCERT_FILENAME}"
               pool_regcert_file="${POOL_FOLDER}/${pool_name}/${POOL_REGCERT_FILENAME}"
               println LOG "creating de-registration cert"
-              println ACTION "${CCLI} ${NETWORK_ERA} stake-pool deregistration-certificate --cold-verification-key-file ${pool_coldkey_vk_file} --epoch ${epoch_enter} --out-file ${pool_deregcert_file}"
-              if ! stdout=$(${CCLI} ${NETWORK_ERA} stake-pool deregistration-certificate --cold-verification-key-file ${pool_coldkey_vk_file} --epoch ${epoch_enter} --out-file ${pool_deregcert_file} 2>&1); then
+              println ACTION "${CCLI} latest stake-pool deregistration-certificate --cold-verification-key-file ${pool_coldkey_vk_file} --epoch ${epoch_enter} --out-file ${pool_deregcert_file}"
+              if ! stdout=$(${CCLI} latest stake-pool deregistration-certificate --cold-verification-key-file ${pool_coldkey_vk_file} --epoch ${epoch_enter} --out-file ${pool_deregcert_file} 2>&1); then
                 println ERROR "\n${FG_RED}ERROR${NC}: failure during stake pool deregistration certificate creation!\n${stdout}"; waitToProceed && continue
               fi
               echo
@@ -2851,10 +2853,10 @@ function main {
               tput rc && tput ed
               if [[ ${CNTOOLS_MODE} = "LOCAL" ]]; then
                 tput sc && println DEBUG "Querying pool parameters from node, can take a while...\n"
-                println ACTION "${CCLI} ${NETWORK_ERA} query pool-params --stake-pool-id ${pool_id_bech32} ${NETWORK_IDENTIFIER}"
-                if ! pool_params=$(${CCLI} ${NETWORK_ERA} query pool-params --stake-pool-id ${pool_id_bech32} ${NETWORK_IDENTIFIER} 2>&1); then
+                println ACTION "${CCLI} query pool-state --stake-pool-id ${pool_id_bech32} ${NETWORK_IDENTIFIER}"
+                if ! pool_params=$(${CCLI} query pool-state --stake-pool-id ${pool_id_bech32} ${NETWORK_IDENTIFIER} 2>&1); then
                   tput rc && tput ed
-                  println ERROR "${FG_RED}ERROR${NC}: pool-params query failed: ${pool_params}"
+                  println ERROR "${FG_RED}ERROR${NC}: pool-state query failed: ${pool_params}"
                   waitToProceed && continue
                 fi
                 tput rc && tput ed
@@ -2907,8 +2909,8 @@ function main {
                   println "$(printf "  %-19s : ${FG_LGRAY}%s${NC}" "Description" "$(jq -r .description "${pool_meta_file}")")"
                   [[ -f "${pool_config}" ]] && meta_url="$(jq -r .json_url "${pool_config}")" || meta_url="---"
                   println "$(printf "  %-19s : ${FG_LGRAY}%s${NC}" "URL" "${meta_url}")"
-                  println "ACTION" "${CCLI} ${NETWORK_ERA} stake-pool metadata-hash --pool-metadata-file ${pool_meta_file}"
-                  meta_hash="$( ${CCLI} ${NETWORK_ERA} stake-pool metadata-hash --pool-metadata-file "${pool_meta_file}" )"
+                  println "ACTION" "${CCLI} latest stake-pool metadata-hash --pool-metadata-file ${pool_meta_file}"
+                  meta_hash="$( ${CCLI} latest stake-pool metadata-hash --pool-metadata-file "${pool_meta_file}" )"
                   println "$(printf "  %-19s : ${FG_LGRAY}%s${NC}" "Hash" "${meta_hash}")"
                 fi
               elif [[ ${pool_registered} = *YES* ]]; then
@@ -2926,8 +2928,8 @@ function main {
                   println "$(printf "  %-19s : ${FG_LGRAY}%s${NC}" "Homepage" "$(jq -r .homepage "$TMP_DIR/url_poolmeta.json")")"
                   println "$(printf "  %-19s : ${FG_LGRAY}%s${NC}" "Description" "$(jq -r .description "$TMP_DIR/url_poolmeta.json")")"
                   println "$(printf "  %-19s : ${FG_LGRAY}%s${NC}" "URL" "${meta_json_url}")"
-                  println ACTION "${CCLI} ${NETWORK_ERA} stake-pool metadata-hash --pool-metadata-file ${TMP_DIR}/url_poolmeta.json"
-                  if ! meta_hash_url=$(${CCLI} ${NETWORK_ERA} stake-pool metadata-hash --pool-metadata-file "${TMP_DIR}/url_poolmeta.json" 2>&1); then
+                  println ACTION "${CCLI} latest stake-pool metadata-hash --pool-metadata-file ${TMP_DIR}/url_poolmeta.json"
+                  if ! meta_hash_url=$(${CCLI} latest stake-pool metadata-hash --pool-metadata-file "${TMP_DIR}/url_poolmeta.json" 2>&1); then
                     println ERROR "\n${FG_RED}ERROR${NC}: failure during metadata hash creation!\n${meta_hash_url}"; waitToProceed && continue
                   fi
                   println "$(printf "  %-19s : ${FG_LGRAY}%s${NC}" "Hash URL" "${meta_hash_url}")"
@@ -3109,8 +3111,8 @@ function main {
                 
                 if [[ ${CNTOOLS_MODE} = "LOCAL" ]]; then
                   # get stake distribution
-                  println "ACTION" "LC_NUMERIC=C printf %.10f \$(${CCLI} ${NETWORK_ERA} query stake-distribution ${NETWORK_IDENTIFIER} | grep ${pool_id_bech32} | tr -s ' ' | cut -d ' ' -f 2))"
-                  stake_pct=$(fractionToPCT "$(LC_NUMERIC=C printf "%.10f" "$(${CCLI} ${NETWORK_ERA} query stake-distribution ${NETWORK_IDENTIFIER} | grep "${pool_id_bech32}" | tr -s ' ' | cut -d ' ' -f 2)")")
+                  println "ACTION" "LC_NUMERIC=C printf %.10f \$(${CCLI} query stake-distribution ${NETWORK_IDENTIFIER} | grep ${pool_id_bech32} | tr -s ' ' | cut -d ' ' -f 2))"
+                  stake_pct=$(fractionToPCT "$(LC_NUMERIC=C printf "%.10f" "$(${CCLI} query stake-distribution ${NETWORK_IDENTIFIER} | grep "${pool_id_bech32}" | tr -s ' ' | cut -d ' ' -f 2)")")
                   if validateDecimalNbr ${stake_pct}; then
                     println "$(printf "%-21s : ${FG_LBLUE}%s${NC} %%" "Stake distribution" "${stake_pct}")"
                   fi
@@ -3128,8 +3130,8 @@ function main {
                   println "$(printf "%-21s : %s" "KES counter" "${kes_counter_str}")"
                 elif [[ ${CNTOOLS_MODE} = "LOCAL" ]]; then
                   pool_opcert_file="${POOL_FOLDER}/${pool_name}/${POOL_OPCERT_FILENAME}"
-                  println ACTION "${CCLI} ${NETWORK_ERA} query kes-period-info --op-cert-file ${pool_opcert_file} ${NETWORK_IDENTIFIER}"
-                  if ! kes_period_info=$(${CCLI} ${NETWORK_ERA} query kes-period-info --op-cert-file "${pool_opcert_file}" ${NETWORK_IDENTIFIER}); then
+                  println ACTION "${CCLI} query kes-period-info --op-cert-file ${pool_opcert_file} ${NETWORK_IDENTIFIER}"
+                  if ! kes_period_info=$(${CCLI} query kes-period-info --op-cert-file "${pool_opcert_file}" ${NETWORK_IDENTIFIER}); then
                     kes_counter_str="${FG_RED}ERROR${NC}: failed to grab counter from node: [${FG_LGRAY}${kes_period_info}${NC}]"
                   else
                     if op_cert_counter=$(awk '/{/,0' <<< "${kes_period_info}" | jq -er '.qKesNodeStateOperationalCertificateNumber' 2>/dev/null); then
@@ -3202,7 +3204,9 @@ function main {
               if [[ ${CNTOOLS_MODE} = "OFFLINE" ]]; then
                 println DEBUG "Copy updated files to pool node replacing existing files:"
                 println DEBUG "${FG_LGRAY}${pool_hotkey_sk_file}${NC}"
+                println DEBUG "${FG_LGRAY}${pool_hotkey_vk_file}${NC}"
                 println DEBUG "${FG_LGRAY}${pool_opcert_file}${NC}"
+                println DEBUG "${FG_LGRAY}${pool_saved_kes_start}${NC}"
                 echo
               fi
               println DEBUG "Restart your pool node for changes to take effect"
@@ -3309,6 +3313,183 @@ function main {
                 println DEBUG "${FG_BLUE}INFO${NC}: pool files are now protected"
                 println DEBUG "Use 'POOL >> DECRYPT / UNLOCK' to unlock"
               fi
+              waitToProceed && continue
+              ;; ###################################################################
+            calidus)
+              clear
+              println DEBUG "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+              println " >> POOL >> CALIDUS"
+              println DEBUG "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+              [[ ! $(ls -A "${POOL_FOLDER}" 2>/dev/null) ]] && echo && println "${FG_YELLOW}No pools available!${NC}" && waitToProceed && continue
+              [[ ! $(ls -A "${WALLET_FOLDER}" 2>/dev/null) ]] && echo && println "${FG_YELLOW}No wallets available to pay for pool calidus metadata registration!${NC}" && waitToProceed && continue
+              if ! cmdAvailable "cardano-signer" &>/dev/null; then
+                println ERROR "\n${FG_RED}ERROR${NC}: prerequisite tool cardano-signer missing or not executable, please install using ${FG_LGRAY}guild-deploy.sh${NC}"
+                waitToProceed && continue
+              fi
+              cardano_signer_version=$(cardano-signer -version)
+              if ! versionCheck "1.24.0" "${cardano_signer_version##* }"; then
+                println INFO "${FG_YELLOW}Please upgrade cardano-signer, this feature require at least version 1.23.0, found ${cardano_signer_version##* }!${NC}"; waitToProceed && continue
+              fi
+              if [[ ${CNTOOLS_MODE} = "OFFLINE" ]]; then
+                println ERROR "${FG_RED}ERROR${NC}: CNTools started in offline mode, option not available!"
+                waitToProceed && continue
+              else
+                if ! selectOpMode; then continue; fi
+              fi
+              echo
+              println DEBUG "Select pool to create / rotate calidus keys for"
+              if [[ ${op_mode} = "online" ]]; then
+                selectPool "all" "${POOL_COLDKEY_VK_FILENAME}"
+                case $? in
+                  1) waitToProceed; continue ;;
+                  2) continue ;;
+                esac
+                getPoolType ${pool_name}
+                case $? in
+                  2) println ERROR "${FG_RED}ERROR${NC}: signing keys encrypted, please decrypt before use!" && waitToProceed && continue ;;
+                  3) println ERROR "${FG_RED}ERROR${NC}: signing keys missing from pool!" && waitToProceed && continue ;;
+                esac
+              else
+                selectPool "all" "${POOL_COLDKEY_VK_FILENAME}"
+                case $? in
+                  1) waitToProceed; continue ;;
+                  2) continue ;;
+                esac
+                getPoolType ${pool_name}
+              fi
+              metatype="no-schema"
+              calidus_sk_file="${POOL_FOLDER}/${pool_name}/${POOL_CALIDUS_SK_FILENAME}"
+              calidus_vk_file="${POOL_FOLDER}/${pool_name}/${POOL_CALIDUS_VK_FILENAME}"
+              calidus_reg_file="${POOL_FOLDER}/${pool_name}/${POOL_CALIDUS_REG_FILENAME}"
+              if [[ -f ${calidus_reg_file} ]]; then
+                CS_CIP88_META_VERIFY=(
+                  cardano-signer verify
+                  --cip88
+                  --data-file "${calidus_reg_file}"
+                )
+                println ACTION "${CS_CIP88_META_VERIFY[*]}"
+                if ! stdout=$("${CS_CIP88_META_VERIFY[@]}" 2>&1) || [[ ${stdout} = *false* ]]; then
+                  println ERROR "\n${FG_RED}ERROR${NC}: failure during calidus metadata verification!\n  result: ${stdout}\n"
+                  select_opt "[d] Delete metadata file and continue" "[Esc] Return"
+                  case $? in
+                    0) safeDel "${calidus_reg_file}" ;;
+                    1) continue ;;
+                  esac
+                else
+                  println DEBUG "\nCalidus metadata registration found and is valid, continue to submit?"
+                  select_opt "[y] Yes" "[n] No, delete and create a new" "[Esc] Return"
+                  case $? in
+                    0) : ;;
+                    1) safeDel "${calidus_reg_file}" ;;
+                    2) continue ;;
+                  esac
+                fi
+              fi
+              if [[ ! -f ${calidus_reg_file} ]]; then
+                if [[ -f ${calidus_vk_file} ]]; then
+                  println DEBUG "\nCalidus keys already exist, how do you want to proceed?"
+                  select_opt "[k] Keep existing keys" "[o] Overwrite to rotate keys" "[Esc] Return"
+                  case $? in
+                    0) : ;;
+                    1) safeDel "${calidus_sk_file}"; safeDel "${calidus_vk_file}" ;;
+                    2) continue ;;
+                  esac
+                fi
+                CS_CALIDUS_KEYS=(
+                  cardano-signer keygen
+                  --path calidus
+                  --out-skey "${calidus_sk_file}"
+                  --out-vkey "${calidus_vk_file}"
+                )
+                println ACTION "${CS_CALIDUS_KEYS[*]}"
+                if ! stdout=$("${CS_CALIDUS_KEYS[@]}" 2>&1); then
+                  println ERROR "\n${FG_RED}ERROR${NC}: failure during calidus key creation!\n${stdout}"
+                  waitToProceed && continue
+                fi
+                current_slot=$(getSlotTipRef)
+                CS_CIP88_META_FILE=(
+                  cardano-signer sign
+                  --cip88
+                  --calidus-public-key "${calidus_vk_file}"
+                  --secret-key "${pool_coldkey_sk_file}"
+                  --nonce ${current_slot}
+                  --json
+                  --out-file "${calidus_reg_file}"
+                )
+                if [[ ${op_mode} = "hybrid" && ! -f "${calidus_reg_file}" ]]; then
+                  println INFO "\n1. Move '${FG_LGRAY}${calidus_vk_file}${NC}' to offline machine that contain ${FG_GREEN}${pool_name}${NC} pool cold key."\
+                    "2. Run below command to generate registration metadata replacing paths as needed."\
+                    "3. Move generated '${FG_LGRAY}${POOL_CALIDUS_REG_FILENAME}${NC}' file back into ${FG_GREEN}${pool_name}${NC} pool folder on this machine."\
+                    "4. Rerun this command to complete calidus key registration keeping existing keys.\n"
+                  println INFO "${FG_LGRAY}${CS_CIP88_META_FILE[*]}${NC}"
+                  waitToProceed && continue
+                fi
+                println ACTION "${CS_CIP88_META_FILE[*]}"
+                if ! stdout=$("${CS_CIP88_META_FILE[@]}" 2>&1); then
+                  println ERROR "\n${FG_RED}ERROR${NC}: failure during calidus metadata generation!\n${stdout}"
+                  waitToProceed && continue
+                fi
+              fi
+              println DEBUG "\nSelect wallet for calidus registration transaction fee"
+              if [[ ${op_mode} = "online" ]]; then
+                selectWallet "balance"
+                case $? in
+                  1) waitToProceed; continue ;;
+                  2) continue ;;
+                esac
+                getWalletType ${wallet_name}
+                case $? in
+                  2) println ERROR "${FG_RED}ERROR${NC}: signing keys encrypted, please decrypt before use!" && waitToProceed && continue ;;
+                  3) println ERROR "${FG_RED}ERROR${NC}: payment and/or stake signing keys missing from wallet!" && waitToProceed && continue ;;
+                esac
+              else
+                selectWallet "balance"
+                case $? in
+                  1) waitToProceed; continue ;;
+                  2) continue ;;
+                esac
+                getWalletType ${wallet_name}
+              fi
+              getWalletBalance ${wallet_name} true true true true
+              if [[ ${pay_lovelace} -gt 0 && ${base_lovelace} -gt 0 ]]; then
+                # Both payment and base address available with funds, let user choose what to use
+                println DEBUG "\nSelect wallet address to use"
+                if [[ -n ${wallet_count} && ${wallet_count} -gt ${WALLET_SELECTION_FILTER_LIMIT} ]]; then
+                  println DEBUG "$(printf "%s\t\t${FG_LBLUE}%s${NC} ADA" "Base Funds :"  "$(formatLovelace ${base_lovelace})")"
+                  println DEBUG "$(printf "%s\t${FG_LBLUE}%s${NC} ADA" "Payment Funds :"  "$(formatLovelace ${pay_lovelace})")"
+                fi
+                select_opt "[b] Base (default)" "[e] Payment" "[Esc] Cancel"
+                case $? in
+                  0) addr="${base_addr}"; lovelace=${base_lovelace} ;;
+                  1) addr="${pay_addr}";  lovelace=${pay_lovelace} ;;
+                  2) continue ;;
+                esac
+              elif [[ ${pay_lovelace} -gt 0 ]]; then
+                addr="${pay_addr}"
+                lovelace=${pay_lovelace}
+                if [[ -n ${wallet_count} && ${wallet_count} -gt ${WALLET_SELECTION_FILTER_LIMIT} ]]; then
+                  println DEBUG "\n$(printf "%s\t${FG_LBLUE}%s${NC} ADA" "Payment Funds :"  "$(formatLovelace ${pay_lovelace})")"
+                fi
+              elif [[ ${base_lovelace} -gt 0 ]]; then
+                addr="${base_addr}"
+                lovelace=${base_lovelace}
+                if [[ -n ${wallet_count} && ${wallet_count} -gt ${WALLET_SELECTION_FILTER_LIMIT} ]]; then
+                  println DEBUG "\n$(printf "%s\t\t${FG_LBLUE}%s${NC} ADA" "Base Funds :"  "$(formatLovelace ${base_lovelace})")"
+                fi
+              else
+                println ERROR "\n${FG_RED}ERROR${NC}: no funds available for wallet ${FG_GREEN}${wallet_name}${NC}"
+                waitToProceed && continue
+              fi
+              metafile="${calidus_reg_file}"
+              if ! sendMetadata; then
+                safeDel "${calidus_sk_file}"; safeDel "${calidus_vk_file}"
+                waitToProceed && continue
+              fi
+              rm -f "${calidus_reg_file}"
+              echo
+              if ! verifyTx ${addr}; then waitToProceed && continue; fi
+              echo
+              println "Pool calidus key registration metadata successfully posted on-chain"
               waitToProceed && continue
               ;; ###################################################################
           esac # pool sub OPERATION
@@ -3458,9 +3639,9 @@ function main {
                 # look for signing key in wallet folder
                 while IFS= read -r -d '' w_file; do
                   if [[ ${w_file} = */"${WALLET_PAY_SK_FILENAME}" || ${w_file} = */"${WALLET_STAKE_SK_FILENAME}" || ${w_file} = */"${WALLET_GOV_DREP_SK_FILENAME}" ]]; then
-                    ! ${CCLI} ${NETWORK_ERA} key verification-key --signing-key-file "${w_file}" --verification-key-file "${TMP_DIR}"/tmp.vkey && continue
+                    ! ${CCLI} key verification-key --signing-key-file "${w_file}" --verification-key-file "${TMP_DIR}"/tmp.vkey && continue
                     if [[ $(jq -er '.type' "${w_file}" 2>/dev/null) = *"Extended"* ]]; then
-                      ! ${CCLI} ${NETWORK_ERA} key non-extended-key --extended-verification-key-file "${TMP_DIR}/tmp.vkey" --verification-key-file "${TMP_DIR}/tmp2.vkey" && continue
+                      ! ${CCLI} key non-extended-key --extended-verification-key-file "${TMP_DIR}/tmp.vkey" --verification-key-file "${TMP_DIR}/tmp2.vkey" && continue
                       mv -f "${TMP_DIR}/tmp2.vkey" "${TMP_DIR}/tmp.vkey"
                     fi
                     grep -q "${otx_vkey_cborHex}" "${TMP_DIR}"/tmp.vkey && skey_path="${w_file}" && break
@@ -3471,14 +3652,14 @@ function main {
                 # look for cold signing key in pool folder
                 if [[ -z ${skey_path} ]]; then
                   while IFS= read -r -d '' p_file; do
-                    ! ${CCLI} ${NETWORK_ERA} key verification-key --signing-key-file "${p_file}" --verification-key-file "${TMP_DIR}"/tmp.vkey && continue
+                    ! ${CCLI} key verification-key --signing-key-file "${p_file}" --verification-key-file "${TMP_DIR}"/tmp.vkey && continue
                     grep -q "${otx_vkey_cborHex}" "${TMP_DIR}"/tmp.vkey && skey_path="${p_file}" && break
                   done < <(find "${POOL_FOLDER}" -mindepth 2 -maxdepth 2 -type f -name "${POOL_COLDKEY_SK_FILENAME}" -print0 2>/dev/null)
                 fi
                 # look for signing key in asset folder
                 if [[ -z ${skey_path} ]]; then
                   while IFS= read -r -d '' a_file; do
-                    ! ${CCLI} ${NETWORK_ERA} key verification-key --signing-key-file "${a_file}" --verification-key-file "${TMP_DIR}"/tmp.vkey && continue
+                    ! ${CCLI} key verification-key --signing-key-file "${a_file}" --verification-key-file "${TMP_DIR}"/tmp.vkey && continue
                     grep -q "${otx_vkey_cborHex}" "${TMP_DIR}"/tmp.vkey && skey_path="${a_file}" && break
                   done < <(find "${ASSET_FOLDER}" -mindepth 2 -maxdepth 2 -type f -name "${ASSET_POLICY_SK_FILENAME}" -print0 2>/dev/null)
                 fi
@@ -3519,13 +3700,13 @@ function main {
                     waitToProceed && continue 2
                   fi
                 else
-                  println ACTION "${CCLI} ${NETWORK_ERA} key verification-key --signing-key-file ${file} --verification-key-file ${TMP_DIR}/tmp.vkey"
-                  if ! stdout=$(${CCLI} ${NETWORK_ERA} key verification-key --signing-key-file "${file}" --verification-key-file "${TMP_DIR}"/tmp.vkey 2>&1); then
+                  println ACTION "${CCLI} key verification-key --signing-key-file ${file} --verification-key-file ${TMP_DIR}/tmp.vkey"
+                  if ! stdout=$(${CCLI} key verification-key --signing-key-file "${file}" --verification-key-file "${TMP_DIR}"/tmp.vkey 2>&1); then
                     println ERROR "\n${FG_RED}ERROR${NC}: failure during verification key creation!\n${stdout}"; waitToProceed && continue 2
                   fi
                   if [[ $(jq -r '.type' "${file}") = *"Extended"* ]]; then
-                    println ACTION "${CCLI} ${NETWORK_ERA} key non-extended-key --extended-verification-key-file ${TMP_DIR}/tmp.vkey --verification-key-file ${TMP_DIR}/tmp2.vkey"
-                    if ! stdout=$(${CCLI} ${NETWORK_ERA} key non-extended-key --extended-verification-key-file "${TMP_DIR}/tmp.vkey" --verification-key-file "${TMP_DIR}/tmp2.vkey" 2>&1); then
+                    println ACTION "${CCLI} key non-extended-key --extended-verification-key-file ${TMP_DIR}/tmp.vkey --verification-key-file ${TMP_DIR}/tmp2.vkey"
+                    if ! stdout=$(${CCLI} key non-extended-key --extended-verification-key-file "${TMP_DIR}/tmp.vkey" --verification-key-file "${TMP_DIR}/tmp2.vkey" 2>&1); then
                       println ERROR "\n${FG_RED}ERROR${NC}: failure during non-extended verification key creation!\n${stdout}"; waitToProceed && continue 2
                     fi
                     mv -f "${TMP_DIR}/tmp2.vkey" "${TMP_DIR}/tmp.vkey"
@@ -3637,14 +3818,14 @@ function main {
                       fi
                       getCredential ${cred_type} ${vkey_file}
                     else
-                      println ACTION "${CCLI} ${NETWORK_ERA} key verification-key --signing-key-file ${file} --verification-key-file ${TMP_DIR}/tmp.vkey"
-                      if ! stdout=$(${CCLI} ${NETWORK_ERA} key verification-key --signing-key-file "${file}" --verification-key-file "${TMP_DIR}"/tmp.vkey 2>&1); then
+                      println ACTION "${CCLI} key verification-key --signing-key-file ${file} --verification-key-file ${TMP_DIR}/tmp.vkey"
+                      if ! stdout=$(${CCLI} key verification-key --signing-key-file "${file}" --verification-key-file "${TMP_DIR}"/tmp.vkey 2>&1); then
                         println ERROR "\n${FG_RED}ERROR${NC}: failure during verification key creation!\n${stdout}"; waitToProceed && continue 2
                       fi
                       file_type=$(jq -r '.type' "${file}")
                       if [[ ${file_type} = *"Extended"* ]]; then
-                        println ACTION "${CCLI} ${NETWORK_ERA} key non-extended-key --extended-verification-key-file ${TMP_DIR}/tmp.vkey --verification-key-file ${TMP_DIR}/tmp2.vkey"
-                        if ! stdout=$(${CCLI} ${NETWORK_ERA} key non-extended-key --extended-verification-key-file "${TMP_DIR}/tmp.vkey" --verification-key-file "${TMP_DIR}/tmp2.vkey" 2>&1); then
+                        println ACTION "${CCLI} key non-extended-key --extended-verification-key-file ${TMP_DIR}/tmp.vkey --verification-key-file ${TMP_DIR}/tmp2.vkey"
+                        if ! stdout=$(${CCLI} key non-extended-key --extended-verification-key-file "${TMP_DIR}/tmp.vkey" --verification-key-file "${TMP_DIR}/tmp2.vkey" 2>&1); then
                           println ERROR "\n${FG_RED}ERROR${NC}: failure during non-extended verification key creation!\n${stdout}"; waitToProceed && continue 2
                         fi
                         mv -f "${TMP_DIR}/tmp2.vkey" "${TMP_DIR}/tmp.vkey"
@@ -4131,25 +4312,36 @@ function main {
                     println " >> VOTE >> GOVERNANCE >> LIST PROPOSALS"
                     println DEBUG "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
                     echo
-                    tput sc && println DEBUG "Querying for list of proposals...\n"
-                    getAllGovActions
+                    tput sc && println DEBUG "Querying for number of active proposals...\n"
+                    if ! getActiveGovActionCount; then
+                      println "${FG_RED}Failed to grab list of proposals!${NC}"
+                      waitToProceed && continue
+                    fi
                     tput rc && tput ed
-                    action_cnt=${#vote_action_list[@]}
-                    if [[ ${action_cnt} -eq 0 ]]; then
+                    if [[ ${vote_action_count} -eq 0 ]]; then
                       println "${FG_YELLOW}No active proposals to vote on!${NC}"
                       waitToProceed && continue
                     fi
-                    if [[ ${action_cnt} -gt 3 ]]; then
-                      getAnswerAnyCust page_entries "${action_cnt} proposals found. Enter number of actions to display per page (enter for 3)"
-                    fi
-                    page_entries=${page_entries:=3}
-                    if ! isNumber ${page_entries} || [[ ${page_entries} -lt 1 ]]; then
-                      println ERROR "${FG_RED}ERROR${NC}: invalid number"
-                      waitToProceed && continue
-                    fi
+                    println "${FG_LBLUE}${vote_action_count}${NC} active proposals to vote on found!"
+                    waitToProceed
+                    page_entries=2
                     curr_epoch=$(getEpoch)
                     page=1
-                    pages=$(( (action_cnt + (page_entries - 1)) / page_entries ))
+                    pages=$(( (vote_action_count + (page_entries - 1)) / page_entries ))
+                    start_idx=$(( (page *  page_entries) - page_entries ))
+                    end_idx=$(( page_entries * page )); [[ ${end_idx} -gt ${vote_action_count} ]] && end_idx=${vote_action_count}
+                    tput sc && println DEBUG "Querying for proposals [$((start_idx+1))-${end_idx}]...\n"
+                    getAllGovActions ${page_entries} ${start_idx} true
+                    tput rc && tput ed
+                    action_cnt=${#vote_action_list[@]}
+                    if [[ ${action_cnt} -eq 0 ]]; then
+                      println "${FG_RED}Failed to grab proposals!${NC}"
+                      waitToProceed && continue
+                    fi
+                    vote_action_list_ui=()
+                    for vote_action in "${vote_action_list[@]}"; do
+                      vote_action_list_ui+=( "${vote_action}" )
+                    done
                     while true; do
                       clear
                       if [[ ${show_details} = Y ]]; then
@@ -4184,9 +4376,9 @@ function main {
                       total_len=$(( max_len + 13 + 5 ))
                       border_line="|$(printf "%${total_len}s" "" | tr " " "=")|" # max value length + longest title (13) + spacing (5)
                       println DEBUG "Current epoch : ${FG_LBLUE}$(getEpoch)${NC}"
-                      println DEBUG "Proposals     : ${FG_LBLUE}${action_cnt}${NC}"
+                      println DEBUG "Proposals     : ${FG_LBLUE}${vote_action_count}${NC}"
                       idx=1
-                      for vote_action in "${vote_action_list[@]:${start_idx}:${page_entries}}"; do
+                      for vote_action in "${vote_action_list_ui[@]:${start_idx}:${page_entries}}"; do
                         println DEBUG "\n${border_line}"
                         # calculate length of strings
                         IFS=',' read -r action_id action_type proposed_in expires_after anchor_url drep_yes drep_yes_power drep_yes_pct drep_no drep_no_power drep_no_pct spo_yes spo_yes_power spo_yes_pct spo_no spo_no_power spo_no_pct cc_yes cc_yes_pct cc_no cc_no_pct drep_vt spo_vt cc_vt isParameterSecurityGroup <<< "${vote_action}"
@@ -4387,8 +4579,25 @@ function main {
                             [[ ${action_id} = gov_action* ]] && parseGovActionId ${action_id} || IFS='#' read -r action_tx_id action_idx <<< "${action_id}"
                             ! isNumber "${action_idx}" && println ERROR "\n${FG_RED}ERROR${NC}: invalid action id!" && waitToProceed && continue
                             show_details=Y
+                            continue
                             ;;
                       esac
+                      if [[ -n ${hasNext} && ${key} == n ]]; then
+                        clear
+                        start_idx=$(( (page *  page_entries) - page_entries ))
+                        end_idx=$(( page_entries * page )); [[ ${end_idx} -gt ${vote_action_count} ]] && end_idx=${vote_action_count}
+                        [[ ${#vote_action_list_ui[@]} -ge ${end_idx} ]] && continue
+                        println DEBUG "Querying for proposals [$((start_idx+1))-${end_idx}]...\n"
+                        getAllGovActions ${page_entries} ${start_idx} false
+                        action_cnt=${#vote_action_list[@]}
+                        if [[ ${action_cnt} -eq 0 ]]; then
+                          println "${FG_RED}Failed to grab proposals!${NC}"
+                          waitToProceed && continue 2
+                        fi
+                        for vote_action in "${vote_action_list[@]}"; do
+                          vote_action_list_ui+=( "${vote_action}" )
+                        done
+                      fi
                     done
                     ;; ###################################################################
                   vote)
@@ -4510,7 +4719,7 @@ function main {
                         esac
                         ;;
                     esac
-                    isAllowedToVote ${vote_mode} ${proposal_type} ${isParameterSecurityGroup}
+                    isAllowedToVote ${vote_mode} ${proposal_type} ${isParameterSecurityGroup:=N}
                     case $? in
                       1) println ERROR "\n${FG_RED}ERROR${NC}: Voter of type '${vote_mode}' is not allowed to vote on an action of type '${proposal_type}'!"; waitToProceed && continue ;;
                       2) println ERROR "\n${FG_RED}ERROR${NC}: This proposal does not contain a parameter of the SecurityGroup, so voter of type '${vote_mode}' is not allowed to vote!"; waitToProceed && continue ;;
@@ -4634,8 +4843,8 @@ function main {
                     case $? in
                       0) unset drep_meta_file ;;
                       1) getAnswerAnyCust drep_anchor_url "Enter DRep's anchor URL"
-                        if [[ ! "${drep_anchor_url}" =~ https?://.* || ${#drep_anchor_url} -gt 64 ]]; then
-                          println ERROR "\n${FG_RED}ERROR${NC}: invalid URL format or more than 64 chars in length"
+                        if [[ ! "${drep_anchor_url}" =~ https?://.* || ${#drep_anchor_url} -gt 128 ]]; then
+                          println ERROR "\n${FG_RED}ERROR${NC}: invalid URL format or more than 128 characters in length"
                           waitToProceed && continue
                         fi
                         if curl -sL -f -m ${CURL_TIMEOUT} -o "${drep_meta_file}" ${drep_anchor_url} && jq -er . "${drep_meta_file}" &>/dev/null; then
@@ -5357,8 +5566,8 @@ function main {
                         if [[ -n ${wallet_match} ]]; then
                           println DEBUG "Wallet:           ${FG_GREEN}$(basename ${wallet_match%/*})${NC}"
                         fi
-                        println ACTION "${CCLI} ${NETWORK_ERA} stake-address build --stake-verification-key ${pubkey_hex:2} ${NETWORK_IDENTIFIER}"
-                        stake_addr=$(${CCLI} ${NETWORK_ERA} stake-address build --stake-verification-key ${pubkey_hex:2} ${NETWORK_IDENTIFIER})
+                        println ACTION "${CCLI} latest stake-address build --stake-verification-key ${pubkey_hex:2} ${NETWORK_IDENTIFIER}"
+                        stake_addr=$(${CCLI} latest stake-address build --stake-verification-key ${pubkey_hex:2} ${NETWORK_IDENTIFIER})
                         println DEBUG "Stake address:    ${FG_LGRAY}${stake_addr}${NC}"
                         delegator_status_url="${CATALYST_API}/registration/delegations/${pubkey_hex}"
                         println ACTION "curl -sSL -m ${CURL_TIMEOUT} -f -H \"Content-Type: application/json\" ${delegator_status_url}"
@@ -6018,12 +6227,12 @@ function main {
                       println "      Choose another name or delete the existing one"
                       waitToProceed && continue
                     fi
-                    println ACTION "${CCLI} ${NETWORK_ERA} address key-gen --verification-key-file ${policy_vk_file} --signing-key-file ${policy_sk_file}"
-                    if ! stdout=$(${CCLI} ${NETWORK_ERA} address key-gen --verification-key-file "${policy_vk_file}" --signing-key-file "${policy_sk_file}" 2>&1); then
+                    println ACTION "${CCLI} address key-gen --verification-key-file ${policy_vk_file} --signing-key-file ${policy_sk_file}"
+                    if ! stdout=$(${CCLI} address key-gen --verification-key-file "${policy_vk_file}" --signing-key-file "${policy_sk_file}" 2>&1); then
                       println ERROR "${FG_RED}ERROR${NC}: failure during policy key creation!\n${stdout}"; safeDel "${policy_folder}"; waitToProceed && continue
                     fi
-                    println ACTION "${CCLI} ${NETWORK_ERA} address key-hash --payment-verification-key-file ${policy_vk_file}"
-                    if ! policy_key_hash=$(${CCLI} ${NETWORK_ERA} address key-hash --payment-verification-key-file "${policy_vk_file}" 2>&1); then
+                    println ACTION "${CCLI} address key-hash --payment-verification-key-file ${policy_vk_file}"
+                    if ! policy_key_hash=$(${CCLI} address key-hash --payment-verification-key-file "${policy_vk_file}" 2>&1); then
                       println ERROR "${FG_RED}ERROR${NC}: failure during policy verification key hashing!\n${policy_key_hash}"; safeDel "${policy_folder}"; waitToProceed && continue
                     fi
                     println DEBUG "How long do you want the policy to be valid? (0/blank=unlimited)"
@@ -6040,8 +6249,8 @@ function main {
                       ttl=$(( $(getSlotTipRef) + (ttl_enter/SLOT_LENGTH) ))
                       echo "{ \"type\": \"all\", \"scripts\": [ { \"slot\": ${ttl}, \"type\": \"before\" }, { \"keyHash\": \"${policy_key_hash}\", \"type\": \"sig\" } ] }" > "${policy_script_file}"
                     fi
-                    println ACTION "${CCLI} ${NETWORK_ERA} transaction policyid --script-file ${policy_script_file}"
-                    if ! policy_id=$(${CCLI} ${NETWORK_ERA} transaction policyid --script-file "${policy_script_file}" 2>&1); then
+                    println ACTION "${CCLI} latest transaction policyid --script-file ${policy_script_file}"
+                    if ! policy_id=$(${CCLI} latest transaction policyid --script-file "${policy_script_file}" 2>&1); then
                       println ERROR "${FG_RED}ERROR${NC}: failure during policy ID generation!\n${policy_id}"; safeDel "${policy_folder}"; waitToProceed && continue
                     fi
                     echo "${policy_id}" > "${policy_id_file}"
@@ -6878,12 +7087,12 @@ function main {
                         println DEBUG "Is selected wallet a CLI generated wallet or derived from mnemonic?"
                         select_opt "[c] CLI" "[m] Mnemonic"
                         case $? in
-                          0) println ACTION "${CCLI} ${NETWORK_ERA} address key-gen --verification-key-file ${ms_payment_vk_file} --signing-key-file ${ms_payment_sk_file}"
-                            if ! stdout=$(${CCLI} ${NETWORK_ERA} address key-gen --verification-key-file "${ms_payment_vk_file}" --signing-key-file "${ms_payment_sk_file}" 2>&1); then
+                          0) println ACTION "${CCLI} address key-gen --verification-key-file ${ms_payment_vk_file} --signing-key-file ${ms_payment_sk_file}"
+                            if ! stdout=$(${CCLI} address key-gen --verification-key-file "${ms_payment_vk_file}" --signing-key-file "${ms_payment_sk_file}" 2>&1); then
                               println ERROR "\n${FG_RED}ERROR${NC}: failure during MultiSig payment key creation!\n${stdout}"; waitToProceed && continue
                             fi
-                            println ACTION "${CCLI} ${NETWORK_ERA} stake-address key-gen --verification-key-file ${ms_stake_vk_file} --signing-key-file ${ms_stake_sk_file}"
-                            if ! stdout=$(${CCLI} ${NETWORK_ERA} stake-address key-gen --verification-key-file "${ms_stake_vk_file}" --signing-key-file "${ms_stake_sk_file}" 2>&1); then
+                            println ACTION "${CCLI} latest stake-address key-gen --verification-key-file ${ms_stake_vk_file} --signing-key-file ${ms_stake_sk_file}"
+                            if ! stdout=$(${CCLI} latest stake-address key-gen --verification-key-file "${ms_stake_vk_file}" --signing-key-file "${ms_stake_sk_file}" 2>&1); then
                               println ERROR "\n${FG_RED}ERROR${NC}: failure during MultiSig stake key creation!\n${stdout}"; waitToProceed && continue
                             fi
                             ;;
@@ -6933,20 +7142,20 @@ function main {
 																	"cborHex": "5880${ses_key}"
 															}
 															EOF
-                            println ACTION "${CCLI} ${NETWORK_ERA} key verification-key --signing-key-file ${ms_payment_sk_file} --verification-key-file ${TMP_DIR}/ms_payment.evkey"
-                            if ! stdout=$(${CCLI} ${NETWORK_ERA} key verification-key --signing-key-file "${ms_payment_sk_file}" --verification-key-file "${TMP_DIR}/ms_payment.evkey" 2>&1); then
+                            println ACTION "${CCLI} key verification-key --signing-key-file ${ms_payment_sk_file} --verification-key-file ${TMP_DIR}/ms_payment.evkey"
+                            if ! stdout=$(${CCLI} key verification-key --signing-key-file "${ms_payment_sk_file}" --verification-key-file "${TMP_DIR}/ms_payment.evkey" 2>&1); then
                               println ERROR "\n${FG_RED}ERROR${NC}: failure during MultiSig payment signing key extraction!\n${stdout}"; waitToProceed && continue
                             fi
-                            println ACTION "${CCLI} ${NETWORK_ERA} key verification-key --signing-key-file ${ms_stake_sk_file} --verification-key-file ${TMP_DIR}/ms_stake.evkey"
-                            if ! stdout=$(${CCLI} ${NETWORK_ERA} key verification-key --signing-key-file "${ms_stake_sk_file}" --verification-key-file "${TMP_DIR}/ms_stake.evkey" 2>&1); then
+                            println ACTION "${CCLI} key verification-key --signing-key-file ${ms_stake_sk_file} --verification-key-file ${TMP_DIR}/ms_stake.evkey"
+                            if ! stdout=$(${CCLI} key verification-key --signing-key-file "${ms_stake_sk_file}" --verification-key-file "${TMP_DIR}/ms_stake.evkey" 2>&1); then
                               println ERROR "\n${FG_RED}ERROR${NC}: failure during MultiSig stake signing key extraction!\n${stdout}"; waitToProceed && continue
                             fi
-                            println ACTION "${CCLI} ${NETWORK_ERA} key non-extended-key --extended-verification-key-file ${TMP_DIR}/ms_payment.evkey --verification-key-file ${ms_payment_vk_file}"
-                            if ! stdout=$(${CCLI} ${NETWORK_ERA} key non-extended-key --extended-verification-key-file "${TMP_DIR}/ms_payment.evkey" --verification-key-file "${ms_payment_vk_file}" 2>&1); then
+                            println ACTION "${CCLI} key non-extended-key --extended-verification-key-file ${TMP_DIR}/ms_payment.evkey --verification-key-file ${ms_payment_vk_file}"
+                            if ! stdout=$(${CCLI} key non-extended-key --extended-verification-key-file "${TMP_DIR}/ms_payment.evkey" --verification-key-file "${ms_payment_vk_file}" 2>&1); then
                               println ERROR "\n${FG_RED}ERROR${NC}: failure during MultiSig payment verification key extraction!\n${stdout}"; waitToProceed && continue
                             fi
-                            println ACTION "${CCLI} ${NETWORK_ERA} key non-extended-key --extended-verification-key-file ${TMP_DIR}/ms_stake.evkey --verification-key-file ${ms_stake_vk_file}"
-                            if ! stdout=$(${CCLI} ${NETWORK_ERA} key non-extended-key --extended-verification-key-file "${TMP_DIR}/ms_stake.evkey" --verification-key-file "${ms_stake_vk_file}" 2>&1); then
+                            println ACTION "${CCLI} key non-extended-key --extended-verification-key-file ${TMP_DIR}/ms_stake.evkey --verification-key-file ${ms_stake_vk_file}"
+                            if ! stdout=$(${CCLI} key non-extended-key --extended-verification-key-file "${TMP_DIR}/ms_stake.evkey" --verification-key-file "${ms_stake_vk_file}" 2>&1); then
                               println ERROR "\n${FG_RED}ERROR${NC}: failure during MultiSig stake verification key extraction!\n${stdout}"; waitToProceed && continue
                             fi
                             ;;

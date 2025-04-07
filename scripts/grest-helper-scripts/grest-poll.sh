@@ -37,7 +37,7 @@ function chk_upd() {
   curr_hour=$(date +%H)
   if [[ ! -f "${PARENT}"/.last_grest_poll ]]; then
     echo "${curr_hour}" > "${PARENT}"/.last_grest_poll
-    curl -sfkL "${API_STRUCT_DEFINITION}" -o "${LOCAL_SPEC}" 2>/dev/null
+    curl -m 2 -sfkL "${API_STRUCT_DEFINITION}" -o "${LOCAL_SPEC}" 2>/dev/null
   else
     last_hour=$(cat "${PARENT}"/.last_grest_poll)
     [[ "${curr_hour}" == "${last_hour}" ]] && SKIP_UPDATE=Y || echo "${curr_hour}" > "${PARENT}"/.last_grest_poll
@@ -55,7 +55,7 @@ function chk_upd() {
     exit 1
   fi
   
-  curl -sfkL "${API_STRUCT_DEFINITION}" -o "${LOCAL_SPEC}" 2>/dev/null
+  curl -m 2 -sfkL "${API_STRUCT_DEFINITION}" -o "${LOCAL_SPEC}" 2>/dev/null
 
   checkUpdate "${PARENT}"/grest-poll.sh Y N N grest-helper-scripts
   [[ "$?" == "2" ]] && echo "ERROR: checkUpdate Failed" && exit 1
@@ -112,7 +112,7 @@ function chk_tip() {
 }
 
 function chk_rpc_struct() {
-  srvr_spec="$(curl -skL "${1}" | jq '[leaf_paths as $p | { "key": $p | map(tostring) | join("_"), "value": getpath($p) }] | from_entries' | awk '{print $1 " " $2}' | grep -e ^\"paths -e ^\"parameters -e ^\"definitions 2>/dev/null)"
+  srvr_spec="$(curl -skL "${1}" | jq '[paths(scalars) as $p | { "key": $p | map(tostring) | join("_"), "value": getpath($p) }] | from_entries' | awk '{print $1 " " $2}' | grep -e ^\"paths -e ^\"parameters -e ^\"definitions 2>/dev/null)"
   api_endpts="$(grep ^\ \ / "${LOCAL_SPEC}" | awk '{print $1}' | sed -e 's#:##' | sort)"
   for endpt in ${api_endpts}
   do

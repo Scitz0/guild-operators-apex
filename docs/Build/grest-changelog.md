@@ -1,5 +1,72 @@
 # Koios gRest Changelog
 
+## [1.3.2] - For all networks.
+
+New release with a few new endpoints, based on requests/feedback from community. While there are no breaking changes introduced, as part of flattening account endpoints (as horizontal filtering on JSON does not really work well) - we have also deprecated a few endpoints, these (alongwith `block_tx_info` deprecated in 1.3.1 will be removed at next major release in coming months.
+
+## New endpoints added:
+- `/address_outputs` - Basic transaction output info for given addresses [#328]
+- `/pool_calidus_keys` - List of valid calidus keys for all pools [#328]
+- `/pool_groups` - List of all registered pool and their groups across sources from [pool_groups](https://github.com/cardano-community/pool_groups) repository. This is only relevant for mainnet [#328]
+- `/pool_owner_history` - Return information about pool owner's historical stake and their promised pledge to their pools [#328]
+- `/account_stake_history` - Get history for dreps voting power distribution [#328]
+- `/account_reward_history` - Get the full rewards history (including MIR) for given stake addresses [#328]
+- `/account_update_history` - Get historical updates (registration, deregistration, delegation and withdrawals) for given stake addresses [#328]
+- `/drep_voting_power_history` - Renamed from drep_history (left drep_history for consistency) [#328]
+- `/pool_voting_power_history` - New endpoint to give voting_power_history by pool [#328]
+- `/vote_list` - List of all votes posted on-chain [#328]
+
+### Data Input/Output Changes:
+- Input (non-breaking) - `/voter_proposal_list` - Make _voter_id optional [#328]
+- Output - `/tip` - Deprecate column `block_no` and use `block_height` to be consistent across all endpoints [#328]
+- Output - `/pool_list` - Add column `pool_group` to output [#328]
+- Output - `/pool_voting_summary` - Update fields with data type lovelace/integer to string [#328]
+
+### Deprecations:
+- `/account_history` - Part of flattening the JSON heirarchy (so that horizontal filtering is optimal), use `/account_stake_history` instead [#328]
+- `/account_rewards` - Part of flattening the JSON heirarchy (so that horizontal filtering is optimal), use `/account_rewards_history` instead [#328]
+- `/account_updates` - Part of flattening the JSON heirarchy (so that horizontal filtering is optimal), use `/account_update_history` instead [#328]
+- `/drep_history` - Renamed to `/drep_voting_power_history` to be more precise [#328]
+- `/drep_votes` - Should be available via `/vote_list` (can use horizontal filtering) [#328]
+- `/pool_votes` - Should be available via `/vote_list` (can use horizontal filtering) [#328]
+
+### Chores:
+- Replace [pg_bech32](https://github.com/cardano-community/pg_bech32) library with [pg_cardano](https://github.com/cardano-community/pg_cardano) [#328]
+- Improve grest.epoch_info_cache performance [#328]
+- `/proposal_voting_summary` - 	Do lookup for gov action id beforehand, Added handling of inactive DRep stake in voting as abstain, unless they voted in epoch of interest [#328]
+- `/account_info` - Add limit filters to ensure there is a single hit per account [#328]
+- Add indexes for voting_procedure [#328]
+
+### Retirements:
+- None
+
+[#328]: https://github.com/cardano-community/koios-artifacts/pull/328
+
+## [1.3.1] - For all networks.
+
+This is a minor value-addition patch release over v1.3.0, addressing feedback from community from initial exposure to Conway functionality. There arent any breaking changes, but there are two new endpoints alongwith addition of fields to existing ones.
+
+## New endpoints added:
+- `/block_tx_cbor` - Get Raw transactions in CBOR format for given block hashes [#319]
+- `/drep_history` - Get history for dreps voting power distribution [#319]
+
+### Data Input/Output Changes:
+- Output - `/totals` - Add new fields `fees`, `deposits_stake`, `deposits_dreps` and `deposits_proposals` [#319]
+- Output - `/proposal_summary` - Add new fields `drep_active_yes_vote_power`, `drep_active_no_vote_power`, `drep_active_abstain_vote_power`, `drep_always_abstain_vote_power`, `pool_active_yes_vote_power`, `pool_active_no_vote_power`, `pool_active_abstain_vote_power` [#319]
+
+### Deprecations:
+- `block_tx_info` - Wasnt optimal for resources (and worked around payload limit for `tx_info`), use `block_tx_cbor` is much more scalable and non-breaking [#319]
+
+### Retirements:
+- None
+
+### Chores:
+- Fix for drep_info regarding active state (was missing by 1) [#319]
+- Fix Typo in API Specs (Preferred => Prefer) [#319]
+- Return is_valid field as-is from dbsync, current behaviour of showing true was invalid [#319]
+
+[#319]: https://github.com/cardano-community/koios-artifacts/pull/319
+
 ## [1.3.0] - For all networks.
 
 This release adds support for cardano db sync 13.6.0.2, alongwith underlying components supporting Conway HF. The major chunk of work for this release is behind the scenes, with minor value additions to input/output schema.

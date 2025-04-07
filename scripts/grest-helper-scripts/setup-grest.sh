@@ -16,7 +16,7 @@
 # Do NOT modify code below           #
 ######################################
 
-SGVERSION=v1.3.0
+SGVERSION=v1.3.2
 
 ######## Functions ########
   usage() {
@@ -43,22 +43,22 @@ SGVERSION=v1.3.0
   
   update_check() {
     # Check if env file is missing in current folder, note that some env functions may not be present until env is sourced successfully
-    [[ ! -f ./env ]] && printf "\nCommon env file missing, please ensure latest guild-deploy.sh was run and this script is being run from ${CNODE_HOME}/scripts folder! \n" && exit 1
+    [[ ! -f ./env ]] && printf "Common env file missing, please ensure latest guild-deploy.sh was run and this script is being run from ${CNODE_HOME}/scripts folder! \n" && exit 1
     . ./env offline # Just to source checkUpdate, will be re-sourced later
     
     # Update check
     if [[ ${SKIP_UPDATE} != Y ]]; then
 
-      printf "\nChecking for script updates..."
+      printf "Checking for script updates...\n"
 
       # Check availability of checkUpdate function
       if [[ ! $(command -v checkUpdate) ]]; then
-        printf "\nCould not find checkUpdate function in env, make sure you're using official guild docos for installation!\n"
+        printf "Could not find checkUpdate function in env, make sure you're using official guild docos for installation!\n"
         exit 1
       fi
 
       checkUpdate env N N N
-      [[ $? -eq 2 ]] && printf "\nERROR: Failed to check updates from github against specified branch\n" && exit 1
+      [[ $? -eq 2 ]] && printf "ERROR: Failed to check updates from github against specified branch\n" && exit 1
 
       checkUpdate setup-grest.sh Y N N grest-helper-scripts
       case $? in
@@ -69,7 +69,7 @@ SGVERSION=v1.3.0
 
     . "${PARENT}"/env offline &>/dev/null
     case $? in
-      1) printf "\nERROR: Failed to load common env file\nPlease verify set values in 'User Variables' section in env file or log an issue on GitHub\n" && exit 1;;
+      1) printf "ERROR: Failed to load common env file\nPlease verify set values in 'User Variables' section in env file or log an issue on GitHub\n" && exit 1;;
       2) clear ;;
     esac
   }
@@ -83,10 +83,10 @@ SGVERSION=v1.3.0
     local job_path="${CRON_SCRIPTS_DIR}/${job}.sh"
     local job_url="https://raw.githubusercontent.com/${G_ACCOUNT}/koios-artifacts/${SGVERSION}/files/grest/cron/jobs/${job}.sh"
     if curl -s -f -m "${CURL_TIMEOUT}" -o "${job_path}" "${job_url}"; then
-      printf "\n    Downloaded \e[32m${job_path}\e[0m"
+      printf "    Downloaded \e[32m${job_path}\e[0m\n"
       chmod +x "${job_path}"
     else
-      err_exit "\nCould not download ${job_url}"
+      err_exit "Could not download ${job_url}"
     fi
   }
 
@@ -140,7 +140,7 @@ SGVERSION=v1.3.0
     get_cron_job_executable "epoch-info-cache-update"
     set_cron_variables "epoch-info-cache-update"
     ([[ ${NWMAGIC} -eq 141 ]] && install_cron_job "epoch-info-cache-update" "*/5 * * * *") ||
-      install_cron_job "epoch-info-cache-update" "*/15 * * * *"
+      install_cron_job "epoch-info-cache-update" "*/5 * * * *"
 
     get_cron_job_executable "active-stake-cache-update"
     set_cron_variables "active-stake-cache-update"
@@ -159,9 +159,7 @@ SGVERSION=v1.3.0
     set_cron_variables "cli-protocol-params-update"
     install_cron_job "cli-protocol-params-update" "*/5 * * * *"
 
-    # Only (legacy) testnet and mainnet asset registries supported
-    # In absence of official messaging, current (soon to be reset) preprod/preview networks use same registry as testnet. TBC - once there is an update from IO on these
-    # Possible future addition for the Guild network once there is a guild registry
+    # Preprod/Preview networks use same registry as testnet.
     if [[ ${NWMAGIC} -eq 764824073 || ${NWMAGIC} -eq 1 || ${NWMAGIC} -eq 2 || ${NWMAGIC} -eq 141 ]]; then
       get_cron_job_executable "asset-registry-update"
       set_cron_variables "asset-registry-update"
@@ -169,11 +167,19 @@ SGVERSION=v1.3.0
       [[ ${NWMAGIC} -eq 1 || ${NWMAGIC} -eq 2 || ${NWMAGIC} -eq 141 ]] && set_cron_asset_registry_testnet_variables
       install_cron_job "asset-registry-update" "*/10 * * * *"
     fi
+
+    # Pool group entries are only relevant for mainnet
+    if [[ ${NWMAGIC} -eq 764824073 ]]; then
+      get_cron_job_executable "pool-groups-update"
+      set_cron_variables "pool-groups-update"
+      install_cron_job "pool-groups-update" "45 */6 * * *"
+    fi
+
   }
 
   # Description : Remove all grest-related cron entries.
   remove_all_grest_cron_jobs() {
-    printf "\nRemoving all installed cron jobs..."
+    printf "Removing all installed cron jobs...\n"
     grep -rl ${CRON_SCRIPTS_DIR} ${CRON_DIR} | xargs sudo rm -f
     rm -f ${CRON_SCRIPTS_DIR}/*.sh
     psql "${PGDATABASE}" -qt -c "SELECT PG_CANCEL_BACKEND(pid) FROM pg_stat_activity WHERE usename='${USER}' AND application_name = 'psql' AND query NOT LIKE '%pg_stat_activity%';"
@@ -233,7 +239,7 @@ SGVERSION=v1.3.0
     grep "^  /" "${CNODE_HOME}"/files/koiosapi.yaml | grep -v -e submittx -e "#RPC" | sed -e 's#^  /#/#' | cut -d: -f1 | sort > "${CNODE_HOME}"/files/grestrpcs 2>/dev/null
     echo "/control_table" >> "${CNODE_HOME}"/files/grestrpcs 2>/dev/null
     checkUpdate grest-poll.sh Y N N grest-helper-scripts >/dev/null
-    sed -i "s# API_STRUCT_DEFINITION=\"https://api.koios.rest/koiosapi.yaml\"# API_STRUCT_DEFINITION=\"https://${KOIOS_SRV}/koiosapi.yaml\"#g" grest-poll.sh
+    sed -i "s|^#API_STRUCT_DEFINITION=\"https://api.koios.rest/koiosapi.yaml\"|API_STRUCT_DEFINITION=\"https://${KOIOS_SRV}/koiosapi.yaml\"|g" grest-poll.sh
     checkUpdate checkstatus.sh Y N N grest-helper-scripts >/dev/null
     checkUpdate getmetrics.sh Y N N grest-helper-scripts >/dev/null
   }
@@ -275,16 +281,16 @@ SGVERSION=v1.3.0
   }
 
   deploy_postgrest() {
-    printf "\n[Re]Installing PostgREST.."
+    printf "[Re]Installing PostgREST..\n"
     pushd ~/tmp >/dev/null || err_exit
-    ARCH=$(uname -i)
+    ARCH=$(uname -m)
     if [ -z "${ARCH##*aarch64*}" ]; then
       pgrest_binary=ubuntu-aarch64.tar.xz
     else 
-      pgrest_binary=linux-static-x64.tar.xz
+      pgrest_binary=linux-static-x86-64.tar.xz
     fi
     #pgrest_asset_url="$(curl -s https://api.github.com/repos/PostgREST/postgrest/releases/latest | jq -r '.assets[].browser_download_url' | grep ${pgrest_binary})"
-    pgrest_asset_url="https://github.com/PostgREST/postgrest/releases/download/v12.2.3/postgrest-v12.2.3-${pgrest_binary}"
+    pgrest_asset_url="https://github.com/PostgREST/postgrest/releases/download/v12.2.8/postgrest-v12.2.8-${pgrest_binary}"
     if curl -sL -f -m ${CURL_TIMEOUT} -o postgrest.tar.xz "${pgrest_asset_url}"; then
       tar xf postgrest.tar.xz &>/dev/null && rm -f postgrest.tar.xz
       [[ -f postgrest ]] || err_exit "PostgREST archive downloaded but binary not found after attempting to extract package!"
@@ -295,45 +301,25 @@ SGVERSION=v1.3.0
     fi
   }
 
-  deploy_b32_ext() {
-    printf "\n[Re]Installing pg_bech32 extension.."
-    pushd ~/git >/dev/null || err_exit
-    if command -v apt-get >/dev/null; then
-      pkg_installer="env NEEDRESTART_MODE=a env DEBIAN_FRONTEND=noninteractive env DEBIAN_PRIORITY=critical apt-get"
-      pkg_list="build-essential make g++ autoconf autoconf-archive automake libtool pkg-config"
+  deploy_pgcardano_ext() {
+    printf "[Re]Installing pg_cardano extension..\n"
+    pushd ~/tmp >/dev/null || err_exit
+    ARCH=$(uname -m)
+    pgcardano_asset_url="https://share.koios.rest/api/public/dl/xFdZDfM4/bin/pg_cardano_linux_${ARCH}_v1.0.5-p2.tar.gz"
+    if curl -sL -f -m ${CURL_TIMEOUT} -o pg_cardano.tar.gz "${pgcardano_asset_url}"; then
+      tar xf pg_cardano.tar.gz &>/dev/null && rm -f pg_cardano.tar.gz
+      pushd pg_cardano >/dev/null || err_exit
+      [[ -f install.sh ]] || err_exit "pg_cardano tar downloaded but install.sh script not found after attempting to extract package!"
+      ./install.sh >/dev/null 2>&1 || err_exit "pg_cardano: Execution of install.sh script failed!"
     fi
-    if command -v dnf >/dev/null; then
-      pkg_installer="dnf"
-      pkg_list="make gcc gcc-c++ autoconf autoconf-archive automake libtool pkgconfig"
-    fi
-    sudo ${pkg_installer} -y install ${pkg_list} --upgrade >/dev/null || err_exit "'sudo ${pkg_installer} -y install ${pkg_list}' failed!"
-    [[ ! -d "libbech32" ]] && git clone https://github.com/whitslack/libbech32 >/dev/null
-      pushd libbech32 || err_exit
-    git pull >/dev/null || err_exit
-    mkdir -p build-aux/m4
-    curl -sf https://raw.githubusercontent.com/NixOS/patchelf/master/m4/ax_cxx_compile_stdcxx.m4 -o build-aux/m4/ax_cxx_compile_stdcx.m4
-    autoreconf -i
-    ./configure >/dev/null || err_exit "Configure failed for libbech32, please try to compile it manually!"
-    make clean >/dev/null
-    make > /dev/null
-    sudo make install >/dev/null
-    export LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH
-    export PKG_CONFIG_PATH=/usr/local/lib:$PKG_CONFIG_PATH
-    sudo ldconfig
-    pushd ~/git >/dev/null || err_exit
-    [[ ! -d "pg_bech32" ]] && git clone https://github.com/cardano-community/pg_bech32 >/dev/null
-    cd pg_bech32 || err_exit
-    git pull >/dev/null || err_exit
-    make clean && make >/dev/null
-    sudo make install >/dev/null
-    psql -qtAX -d ${PGDATABASE} -c "DROP EXTENSION IF EXISTS pg_bech32;CREATE EXTENSION pg_bech32;" >/dev/null
+    psql -qtAX -d ${PGDATABASE} -c "DROP EXTENSION IF EXISTS pg_cardano;CREATE EXTENSION pg_cardano;" >/dev/null
   }
 
   deploy_haproxy() {
-    printf "\n[Re]Installing HAProxy.."
+    printf "[Re]Installing HAProxy..\n"
     pushd ~/tmp >/dev/null || err_exit
     major_v="3.1"
-    minor_v="0"
+    minor_v="5"
     haproxy_url="http://www.haproxy.org/download/${major_v}/src/haproxy-${major_v}.${minor_v}.tar.gz"
     if curl -sL -f -m ${CURL_TIMEOUT} -o haproxy.tar.gz "${haproxy_url}"; then
       tar xf haproxy.tar.gz &>/dev/null && rm -f haproxy.tar.gz
@@ -360,7 +346,7 @@ SGVERSION=v1.3.0
   deploy_monitoring_agents() {
     # Install socat to allow creating getmetrics script to listen on port
     if ! command -v socat >/dev/null; then
-      printf "\nInstalling socat .."
+      printf "Installing socat ..\n"
       if command -v apt-get >/dev/null; then
         sudo apt-get -y install socat >/dev/null || err_exit "'sudo apt-get -y install socat' failed!"
       elif command -v dnf >/dev/null; then
@@ -372,7 +358,7 @@ SGVERSION=v1.3.0
     pushd "${CNODE_HOME}"/scripts >/dev/null || err_exit
     # script not available at first load
     sed -e "s@cexplorer@${PGDATABASE}@g" -i "${CNODE_HOME}"/scripts/getmetrics.sh
-    printf "\n[Re]Installing Monitoring Agent.."
+    printf "[Re]Installing Monitoring Agent..\n"
     e=!
     sudo bash -c "cat <<-EOF > ${CNODE_HOME}/scripts/grest-exporter.sh
 			#${e}/usr/bin/env bash
@@ -384,7 +370,7 @@ SGVERSION=v1.3.0
 
   deploy_configs() {
     # Create PostgREST config template
-    printf "\n[Re]Deploying Configs.."
+    printf "[Re]Deploying Configs..\n"
     sudo chmod 755 "${CNODE_HOME}" "${CNODE_HOME}"/priv
     [[ -f "${CNODE_HOME}"/priv/grest.conf ]] && sudo mv "${CNODE_HOME}"/priv/grest.conf "${CNODE_HOME}"/priv/grest.conf_bkp$(date +%s)
     cat <<-EOF > "${CNODE_HOME}"/priv/grest.conf
@@ -411,7 +397,6 @@ SGVERSION=v1.3.0
     bash -c "cat <<-EOF > ${HAPROXY_CFG}
 			global
 			  daemon
-			  nbthread 4
 			  maxconn 256
 			  ulimit-n 65536
 			  stats socket \"\\\$GRESTTOP\"/sockets/haproxy.socket mode 0600 level admin user \"\\\$HAPROXY_SOCKET_USER\"
@@ -493,12 +478,12 @@ SGVERSION=v1.3.0
 			backend flood_lmt_rate
 			  stick-table type ip size 1m expire 10m store http_req_rate(10s)
 			EOF"
-    printf "\n  Done!! Please ensure to set any custom settings/peers/TLS configs/etc back and update configs as necessary!"
+    printf "  Done!! Please ensure to set any custom settings/peers/TLS configs/etc back and update configs as necessary!\n"
   }
 
   deploy_systemd() {
-    printf "\n[Re]Deploying Services.."
-    printf "\n  PostgREST Service"
+    printf "[Re]Deploying Services..\n"
+    printf "  PostgREST Service\n"
     sudo bash -c "cat <<-EOF > /etc/systemd/system/${CNODE_VNAME}-postgrest.service
 			[Unit]
 			Description=REST Overlay for Postgres database
@@ -517,7 +502,7 @@ SGVERSION=v1.3.0
 			[Install]
 			WantedBy=multi-user.target
 			EOF"
-    printf "\n  HAProxy Service"
+    printf "  HAProxy Service\n"
     [[ -f /usr/sbin/haproxy ]] && sudo bash -c "cat <<-EOF > /etc/systemd/system/${CNODE_VNAME}-haproxy.service
 			[Unit]
 			Description=HAProxy Load Balancer
@@ -538,7 +523,7 @@ SGVERSION=v1.3.0
 			[Install]
 			WantedBy=multi-user.target
 			EOF"
-    printf "\n  GRest Exporter Service"
+    printf "  GRest Exporter Service\n"
     [[ -f "${CNODE_HOME}"/scripts/grest-exporter.sh ]] && sudo bash -c "cat <<-EOF > /etc/systemd/system/${CNODE_VNAME}-grest_exporter.service
 			[Unit]
 			Description=gRest Services Metrics Exporter
@@ -562,7 +547,7 @@ SGVERSION=v1.3.0
 			WantedBy=multi-user.target
 			EOF"
     sudo systemctl daemon-reload && sudo systemctl enable ${CNODE_VNAME}-postgrest.service ${CNODE_VNAME}-haproxy.service ${CNODE_VNAME}-grest_exporter.service >/dev/null 2>&1
-    printf "\n  Done!! Please ensure to all [re]start services above!"
+    printf "  Done!! Please ensure to all [re]start services above!\n"
   }
   
   # Description : Setup grest schema, web_anon user, and genesis and control tables.
@@ -573,8 +558,8 @@ SGVERSION=v1.3.0
     if ! basics_sql=$(curl -s -f -m "${CURL_TIMEOUT}" "${basics_sql_url}" 2>&1); then
       err_exit "Failed to get basic db setup SQL from ${basics_sql_url}"
     fi
-    printf "\nAdding grest schema if missing and granting usage for web_anon..."
-    ! output=$(psql "${PGDATABASE}" -q <<<${basics_sql} 2>&1) && err_exit "${output}"
+    printf "Adding grest schema if missing and granting usage for web_anon...\n"
+    ! output=$(psql "${PGDATABASE}" -v "ON_ERROR_STOP=1" -q <<<${basics_sql} 2>&1) && err_exit "${output}"
     return 0
   }
 
@@ -601,7 +586,7 @@ SGVERSION=v1.3.0
     if ! reset_sql=$(curl -s -f -m "${CURL_TIMEOUT}" "${reset_sql_url}" 2>&1); then
       err_exit "Failed to get reset grest SQL from ${reset_sql_url}."
     fi
-    printf "\nResetting grest schema..."
+    printf "Resetting grest schema...\n"
     ! output=$(psql "${PGDATABASE}" -v "ON_ERROR_STOP=1" -q <<<${reset_sql} 2>&1) && err_exit "${output}"
   }
 
@@ -619,9 +604,9 @@ SGVERSION=v1.3.0
     [[ -z ${file_name} || ${file_name} != *.sql ]] && return
     dl_url="${1}"
     [[ -z ${dl_url} ]] && return
-    ! rpc_sql=$(curl -s -f -m ${CURL_TIMEOUT} ${dl_url} 2>/dev/null) && printf "\n     \e[31mERROR\e[0m: download failed: ${dl_url}" && return 1
-    printf "\n    Deploying Function :   \e[32m${dir_name}/${file_name}\e[0m"
-    ! output=$(psql "${PGDATABASE}" -v "ON_ERROR_STOP=1" <<<${rpc_sql} 2>&1) && printf "\n        \e[31mERROR\e[0m: ${output}"
+    ! rpc_sql=$(curl -s -f -m ${CURL_TIMEOUT} ${dl_url} 2>/dev/null) && printf "     \e[31mERROR\e[0m: download failed: ${dl_url}\n" && return 1
+    printf "    Deploying Function :   \e[32m${dir_name}/${file_name}\e[0m\n"
+    ! output=$(psql "${PGDATABASE}" -v "ON_ERROR_STOP=1" <<<${rpc_sql} 2>&1) && printf "        \e[31mERROR\e[0m: ${output}\n"
   }
 
   # Description : Deployment list (will only proceed if sync status check passes):
@@ -633,25 +618,25 @@ SGVERSION=v1.3.0
   #             : 4) Cron jobs - deploy cron entries to /etc/cron.d/ from files/grest/cron/jobs/*.sh
   #             :    Used for updating cached tables data.
   deploy_query_updates() {
-    printf "\n(Re)Deploying Postgres RPCs/views/schedule...\n"
+    printf "(Re)Deploying Postgres RPCs/views/schedule...\n"
     check_db_status
     if [[ $? -eq 1 ]]; then
       err_exit "Please wait for Cardano DBSync to populate PostgreSQL DB at least until Alonzo fork, and then re-run this setup script with the -q flag."
     fi
 
-    printf "\n  Downloading DBSync RPC functions from Guild Operators GitHub store..."
+    printf "  Downloading DBSync RPC functions from Guild Operators GitHub store...\n"
     if ! rpc_file_list=$(curl -s -f -m ${CURL_TIMEOUT} "https://api.github.com/repos/${G_ACCOUNT}/koios-artifacts/git/trees/${SGVERSION}?recursive=1" | grep "files/grest/rpc.*.sql" | grep -v db-scripts | sed -e 's#^.*.files/grest#https://raw.githubusercontent.com/'"${G_ACCOUNT}"'/koios-artifacts/'"${SGVERSION}"'/files/grest#g' -e 's#",$##g' 2>&1); then
       err_exit "${rpc_file_list}"
     fi
-    printf "\n  (Re)Deploying GRest objects to DBSync..."
+    printf "  (Re)Deploying GRest objects to DBSync...\n"
     populate_genesis_table
     for row in ${rpc_file_list}; do
       deploy_rpc ${row}
     done
     setup_cron_jobs
-    printf "\n  All RPC functions successfully added to DBSync! For detailed query specs and examples, visit ${API_DOCS_URL}!\n"
-    printf "\nRestarting PostgREST to clear schema cache..\n"
-    sudo systemctl restart ${CNODE_VNAME}-postgrest.service && printf "\nDone!!\n"
+    printf "  All RPC functions successfully added to DBSync! For detailed query specs and examples, visit ${API_DOCS_URL}!\n"
+    printf "Restarting PostgREST to clear schema cache..\n"
+    sudo systemctl restart ${CNODE_VNAME}-postgrest.service && sudo systemctl reload ${CNODE_VNAME}-haproxy.service && printf "Done!!\n"
   }
 
   # Description : Update the setup-grest.sh version used in the database.
@@ -689,7 +674,7 @@ SGVERSION=v1.3.0
   if [[ "${INSTALL_MONITORING_AGENTS}" == "Y" ]]; then deploy_monitoring_agents; fi
   if [[ "${OVERWRITE_CONFIG}" == "Y" ]]; then deploy_configs; fi
   if [[ "${OVERWRITE_SYSTEMD}" == "Y" ]]; then deploy_systemd; fi
-  if [[ "${RESET_GREST}" == "Y" ]]; then remove_all_grest_cron_jobs; reset_grest; deploy_b32_ext; fi
+  if [[ "${RESET_GREST}" == "Y" ]]; then remove_all_grest_cron_jobs; reset_grest; deploy_pgcardano_ext; fi
   if [[ "${DB_QRY_UPDATES}" == "Y" ]]; then remove_all_grest_cron_jobs; setup_db_basics; deploy_query_updates; update_grest_version; fi
   pushd -0 >/dev/null || err_exit
   dirs -c
