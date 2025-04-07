@@ -1252,6 +1252,10 @@ case ${NWMAGIC} in
     [[ -z ${NETWORK_NAME} ]] && NETWORK_NAME="Prime Mainnet"
     [[ -z ${SHELLEY_TRANS_EPOCH} ]] && SHELLEY_TRANS_EPOCH=2
     [[ -z ${KOIOS_API} ]] && KOIOS_API="" ;;
+  3311)
+    [[ -z ${NETWORK_NAME} ]] && NETWORK_NAME="Prime Testnet"
+    [[ -z ${SHELLEY_TRANS_EPOCH} ]] && SHELLEY_TRANS_EPOCH=0
+    [[ -z ${KOIOS_API} ]] && KOIOS_API="" ;;
   *) 
     [[ -z ${NETWORK_NAME} ]] && NETWORK_NAME="Custom"
     [[ -z ${SHELLEY_TRANS_EPOCH} ]] && SHELLEY_TRANS_EPOCH=0

@@ -3,13 +3,14 @@
   "ByronGenesisFile": "/opt/cardano/cnode/files/byron-genesis.json",
   "ConwayGenesisFile": "/opt/cardano/cnode/files/conway-genesis.json",
   "EnableP2P": true,
+  "ExperimentalProtocolsEnabled": true,
   "LastKnownBlockVersion-Alt": 0,
-  "LastKnownBlockVersion-Major": 7,
+  "LastKnownBlockVersion-Major": 6,
   "LastKnownBlockVersion-Minor": 0,
   "MinNodeVersion": "9.2.1",
   "PeerSharing": true,
   "Protocol": "Cardano",
-  "RequiresNetworkMagic": "RequiresNoMagic",
+  "RequiresNetworkMagic": "RequiresMagic",
   "ShelleyGenesisFile": "/opt/cardano/cnode/files/shelley-genesis.json",
   "SnapshotInterval": 43200,
   "MempoolCapacityBytesOverride": 8388608,
@@ -19,6 +20,11 @@
   "TargetNumberOfEstablishedPeers": 50,
   "TargetNumberOfKnownPeers": 100,
   "TargetNumberOfRootPeers": 60,
+  "TestShelleyHardForkAtEpoch": 0,
+  "TestAllegraHardForkAtEpoch": 0,
+  "TestMaryHardForkAtEpoch": 0,
+  "TestAlonzoHardForkAtEpoch": 0,
+  "TestBabbageHardForkAtEpoch": 0,
   "TraceAcceptPolicy": true,
   "TraceBlockFetchClient": true,
   "TraceBlockFetchDecisions": false,
@@ -39,6 +45,8 @@
   "TraceHandshake": true,
   "TraceInboundGovernor": true,
   "TraceIpSubscription": true,
+  "TraceInboundGovernorCounters": true,
+  "TraceConnectionManagerTransitions": true,
   "TraceLedgerPeers": true,
   "TraceLocalChainSyncProtocol": false,
   "TraceLocalConnectionManager": true,
@@ -51,6 +59,8 @@
   "TraceMux": false,
   "TracePeerSelection": true,
   "TracePeerSelectionActions": true,
+  "TracePeerSelectionCounters": true,
+  "TracePeerStateActions": true,
   "TracePublicRootPeers": true,
   "TraceServer": true,
   "TraceTxInbound": false,
@@ -68,10 +78,10 @@
       "/opt/cardano/cnode/logs/node.json"
     ]
   ],
-  "hasEKG": 12959,
+  "hasEKG": 12788,
   "hasPrometheus": [
     "0.0.0.0",
-    12949
+    12789
   ],
   "minSeverity": "Info",
   "options": {
@@ -109,8 +119,7 @@
   "MaxConcurrencyBulkSync": 1,
   "MaxConcurrencyDeadline": 2,
   "PBftSignatureThreshold": 0.6,
-  "ByronGenesisHash": "6b91f3c3d68ebeaa8dede86ba371a56ae60547dec6a8713d1fca6e403caa4605",
-  "ShelleyGenesisHash": "4fad52e08057e9cbfe71411719205c14c2e61e4dd4123541d0b6fa92971c89b0",
-  "AlonzoGenesisHash": "1cd94b66eade0670885744a858accdb2c3249e43e247db2c66b158050ec6a3e4",
-  "ConwayGenesisHash": "01649daebfc1ae5646c6aab2bf07533cdf626fd49e270ac4258be7fe253c3cc1"
+  "ByronGenesisHash": "acd3e7c4cc071ae176fa253e654f0dd4e759892b16e958d8bd3c393f5c6c66d2",
+  "ShelleyGenesisHash": "0b67b0cb16e973478888efb1c7f69fca8e80489369afed94624a588e94a94f2b",
+  "AlonzoGenesisHash": "0f715ff78fcab739c6cb2cc1073eb87d0ffe3514218bfa0337d416f6fbaf7886"
 }
