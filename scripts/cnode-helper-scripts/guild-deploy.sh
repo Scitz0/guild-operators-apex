@@ -109,8 +109,8 @@ set_defaults() {
   [[ -z "${BRANCH}" ]] && BRANCH="master"
   [[ "${SUDO}" = 'Y' ]] && sudo="sudo" || sudo=""
   [[ "${SUDO}" = 'Y' && $(id -u) -eq 0 ]] && err_exit "Please run as non-root user."
-  [[ -z "${CARDANO_NODE_VERSION}" ]] && CARDANO_NODE_VERSION="$(curl -sfk "https://raw.githubusercontent.com/${G_ACCOUNT}/guild-operators-apex/${BRANCH}/files/docker/node/release-versions/cardano-node-latest.txt" || echo "9.2.1")"
-  [[ -z "${CARDANO_CLI_VERSION}" ]] && CARDANO_CLI_VERSION="$(curl -sfk "https://raw.githubusercontent.com/${G_ACCOUNT}/guild-operators-apex/${BRANCH}/files/docker/node/release-versions/cardano-cli-latest.txt" || echo "9.4.1.0")"
+  [[ -z "${CARDANO_NODE_VERSION}" ]] && CARDANO_NODE_VERSION="$(curl -sfk "https://raw.githubusercontent.com/${G_ACCOUNT}/guild-operators-apex/${BRANCH}/files/docker/node/release-versions/cardano-node-latest.txt" || echo "10.4.1")"
+  [[ -z "${CARDANO_CLI_VERSION}" ]] && CARDANO_CLI_VERSION="$(curl -sfk "https://raw.githubusercontent.com/${G_ACCOUNT}/guild-operators-apex/${BRANCH}/files/docker/node/release-versions/cardano-cli-latest.txt" || echo "10.1.1.0")"
   CNODE_HOME="${CNODE_PATH}/${CNODE_NAME}"
   CNODE_VNAME=$(echo "$CNODE_NAME" | awk '{print toupper($0)}')
   [[ -z ${MITHRIL_HOME} ]] && MITHRIL_HOME="${CNODE_HOME}/mithril"
@@ -497,19 +497,31 @@ download_cardanohwcli() {
 # Download pre-built ogmios binary
 download_ogmios() {
   [[ -z ${ARCH##*aarch64*} ]] && err_exit "  The ogmios pre-compiled binary is not available for ARM, you might need to build them!"
-  echo -e "\n  Downloading Ogmios 6.8.0 archive from GitHub.."
+  echo -e "\nInstalling Ogmios"
+  if command -v ogmios >/dev/null; then ogmios_version="$(ogmios --version)" 2>/dev/null || ogmios_version="v0.0.0"; else ogmios_version="v0.0.0"; fi
   rm -rf /tmp/ogmios && mkdir /tmp/ogmios
   pushd /tmp/ogmios >/dev/null || err_exit
-  curl -m 200 -sfL https://github.com/CardanoSolutions/ogmios/releases/download/v6.8.0/ogmios-v6.8.0-x86_64-linux.zip -o ogmios.zip || err_exit "  Could not download Ogmios from release artefacts on GitHub!"
-  unzip ogmios.zip &>/dev/null
-  rm -f ogmios.zip
-  [[ -f bin/ogmios ]] && OGMIOSPATH=bin/ogmios
-  [[ -f ogmios ]] && OGMIOSPATH=ogmios
-  [[ -n ${OGMIOSPATH} ]] || err_exit "ogmios downloaded but binary not found after extracting package!"
-  chmod +x /tmp/ogmios/${OGMIOSPATH}
-  mv -f /tmp/ogmios/${OGMIOSPATH} "${HOME}"/.local/bin/
-  rm -f "${HOME}"/.cabal/bin/ogmios # Remove duplicate from $PATH
-  echo -e "\n  ogmios ${ogmios_git_version} installed!"
+  ogmios_asset_url="$(curl -s https://api.github.com/repos/CardanoSolutions/ogmios/releases | jq -r '.[].assets[].browser_download_url' | grep x86_64-linux.zip | head -1)"
+  if curl -sL -f -m ${CURL_TIMEOUT} -o ogmios.zip ${ogmios_asset_url}; then
+    unzip ogmios.zip &>/dev/null
+    rm -f ogmios.zip
+    [[ -f bin/ogmios ]] && OGMIOSPATH=bin/ogmios
+    [[ -f ogmios ]] && OGMIOSPATH=ogmios
+    [[ -n ${OGMIOSPATH} ]] || err_exit "ogmios downloaded but binary not found after extracting package!"
+    ogmios_git_version="$(curl -s https://api.github.com/repos/CardanoSolutions/ogmios/releases | jq -r '.[0].tag_name')"
+    if ! versionCheck "${ogmios_git_version}" "${ogmios_version}"; then
+      [[ "${ogmios_version}" = "0.0.0" ]] && echo -e "\n  latest version: ${ogmios_git_version}" || echo -e "\n  installed version: ${ogmios_version} | latest version: ${ogmios_git_version}"
+      chmod +x /tmp/ogmios/${OGMIOSPATH}
+      mv -f /tmp/ogmios/${OGMIOSPATH} "${HOME}"/.local/bin/
+      rm -f "${HOME}"/.cabal/bin/ogmios # Remove duplicate from $PATH
+      echo -e "\n  ogmios ${ogmios_git_version} installed!"
+    else
+      rm -rf /tmp/ogmios #cleanup in /tmp
+      echo -e "\n  ogmios already latest version [${ogmios_version}], skipping!"
+    fi
+  else
+    err_exit "Download of latest release of ogmios archive from GitHub failed! Please retry or manually install it."
+  fi
 }
 
 # Download pre-built cardano-signer binary
