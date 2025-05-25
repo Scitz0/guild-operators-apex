@@ -106,7 +106,7 @@ set_defaults() {
   [[ -z ${UPDATE_CHECK} ]] && UPDATE_CHECK='Y'
   [[ -z ${SKIP_DBSYNC_DOWNLOAD} ]] && SKIP_DBSYNC_DOWNLOAD='N'
   [[ -z ${SUDO} ]] && SUDO='Y'
-  [[ -z "${BRANCH}" ]] && BRANCH="master"
+  [[ -z "${BRANCH}" ]] && BRANCH="main"
   [[ "${SUDO}" = 'Y' ]] && sudo="sudo" || sudo=""
   [[ "${SUDO}" = 'Y' && $(id -u) -eq 0 ]] && err_exit "Please run as non-root user."
   [[ -z "${CARDANO_NODE_VERSION}" ]] && CARDANO_NODE_VERSION="$(curl -sfk "https://raw.githubusercontent.com/${G_ACCOUNT}/guild-operators-apex/${BRANCH}/files/docker/node/release-versions/cardano-node-latest.txt" || echo "10.1.4")"
