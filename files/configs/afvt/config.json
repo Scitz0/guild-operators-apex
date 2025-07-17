@@ -1,25 +1,32 @@
 {
   "AlonzoGenesisFile": "/opt/cardano/cnode/files/alonzo-genesis.json",
   "ByronGenesisFile": "/opt/cardano/cnode/files/byron-genesis.json",
+  "ConsensusMode": "PraosMode",
   "ConwayGenesisFile": "/opt/cardano/cnode/files/conway-genesis.json",
   "EnableP2P": true,
-  "ExperimentalProtocolsEnabled": true,
   "LastKnownBlockVersion-Alt": 0,
-  "LastKnownBlockVersion-Major": 6,
+  "LastKnownBlockVersion-Major": 7,
   "LastKnownBlockVersion-Minor": 0,
-  "MinNodeVersion": "9.2.1",
+  "LedgerDB": {
+    "Backend": "V2InMemory",
+    "NumOfDiskSnapshots": 2,
+    "QueryBatchSize": 100000,
+    "SnapshotInterval": 43200
+  },
+  "MempoolCapacityBytesOverride": 8388608,
+  "MinNodeVersion": "10.4.1",
   "PeerSharing": true,
   "Protocol": "Cardano",
-  "RequiresNetworkMagic": "RequiresMagic",
+  "RequiresNetworkMagic": "RequiresNoMagic",
   "ShelleyGenesisFile": "/opt/cardano/cnode/files/shelley-genesis.json",
-  "SnapshotInterval": 43200,
-  "MempoolCapacityBytesOverride": 8388608,
-  "EnableLogging": true,
-  "EnableLogMetrics": false,
-  "TargetNumberOfActivePeers": 20,
-  "TargetNumberOfEstablishedPeers": 50,
-  "TargetNumberOfKnownPeers": 100,
-  "TargetNumberOfRootPeers": 60,
+  "SyncTargetNumberOfActiveBigLedgerPeers": 10,
+  "SyncTargetNumberOfActivePeers": 0,
+  "SyncTargetNumberOfEstablishedBigLedgerPeers": 25,
+  "SyncTargetNumberOfKnownBigLedgerPeers": 50,
+  "TargetNumberOfActivePeers": 10,
+  "TargetNumberOfEstablishedPeers": 25,
+  "TargetNumberOfKnownPeers": 50,
+  "TargetNumberOfRootPeers": 25,
   "TestShelleyHardForkAtEpoch": 0,
   "TestAllegraHardForkAtEpoch": 0,
   "TestMaryHardForkAtEpoch": 0,
@@ -69,6 +76,7 @@
   "TracingVerbosity": "NormalVerbosity",
   "TurnOnLogMetrics": true,
   "TurnOnLogging": true,
+  "UseTraceDispatcher": false,
   "defaultBackends": [
     "KatipBK"
   ],
@@ -105,8 +113,7 @@
     "rpMaxAgeHours": 24
   },
   "setupBackends": [
-    "KatipBK",
-    "EKGViewBK"
+    "KatipBK"
   ],
   "setupScribes": [
     {
@@ -116,10 +123,12 @@
       "scRotation": null
     }
   ],
+  "MaxKnownMajorProtocolVersion": 7,
   "MaxConcurrencyBulkSync": 1,
   "MaxConcurrencyDeadline": 2,
   "PBftSignatureThreshold": 0.6,
-  "ByronGenesisHash": "acd3e7c4cc071ae176fa253e654f0dd4e759892b16e958d8bd3c393f5c6c66d2",
-  "ShelleyGenesisHash": "0b67b0cb16e973478888efb1c7f69fca8e80489369afed94624a588e94a94f2b",
-  "AlonzoGenesisHash": "0f715ff78fcab739c6cb2cc1073eb87d0ffe3514218bfa0337d416f6fbaf7886"
+  "ByronGenesisHash": "c0629408cdd5e92063e217cb0ec9c3d663203fd4a62fa4569b8d9adb80d82d9b",
+  "ShelleyGenesisHash": "e0cee684c016ea3bb360b48878f48c2cc5961939bca0943be9e5162b186c039c",
+  "AlonzoGenesisHash": "501e2702bddac606c398acf9733af26857de5c0424f6e421ea524cf7a0c30f99",
+  "ConwayGenesisHash": "72a8e84c684b44e6b7530b6861582c5fa2db112f5b56e38505f987f34f8ffa66"
 }
