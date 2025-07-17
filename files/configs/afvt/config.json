@@ -130,5 +130,5 @@
   "ByronGenesisHash": "c0629408cdd5e92063e217cb0ec9c3d663203fd4a62fa4569b8d9adb80d82d9b",
   "ShelleyGenesisHash": "e0cee684c016ea3bb360b48878f48c2cc5961939bca0943be9e5162b186c039c",
   "AlonzoGenesisHash": "501e2702bddac606c398acf9733af26857de5c0424f6e421ea524cf7a0c30f99",
-  "ConwayGenesisHash": "72a8e84c684b44e6b7530b6861582c5fa2db112f5b56e38505f987f34f8ffa66"
+  "ConwayGenesisHash": "01649daebfc1ae5646c6aab2bf07533cdf626fd49e270ac4258be7fe253c3cc1"
 }
