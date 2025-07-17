@@ -6,6 +6,27 @@ All notable changes to this tool will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [13.5.1] - 2025-07-13
+#### Changed
+- Calidus mnemonic printout on key creation
+- Calidus status shown for POOL > SHOW in light mode
+
+## [13.5.0] - 2025-06-10
+#### Changed
+- Node 10.4 support
+
+## [13.4.4] - 2025-05-28
+#### Fixed
+- Delegation to DReps using multi-sig wallets
+
+## [13.4.3] - 2025-05-17
+#### Fixed
+- Transaction signing fixes for scripts (multisig)
+
+## [13.4.2] - 2025-05-13
+#### Fixed
+- Multisig signing flow improvements and stake registration fix.
+
 ## [13.4.1] - 2025-04-05
 #### Fixed
 - Proper check for if a HW device is used in pool update

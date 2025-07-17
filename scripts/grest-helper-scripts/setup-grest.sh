@@ -30,6 +30,7 @@ SGVERSION=v1.3.2
 		    p    Install/Update PostgREST binaries by downloading latest release from github.
 		    r    (Re-)Install Reverse Proxy Monitoring Layer (haproxy) binaries and config
 		    m    Install/Update Monitoring agent scripts
+		    g    Install/Update pg_cardano extension
 		    c    Overwrite haproxy, postgREST configs
 		    d    Overwrite systemd definitions
 		-u    Skip update check for setup script itself
@@ -159,6 +160,10 @@ SGVERSION=v1.3.2
     set_cron_variables "cli-protocol-params-update"
     install_cron_job "cli-protocol-params-update" "*/5 * * * *"
 
+    get_cron_job_executable "pool-info-cache-update"
+    set_cron_variables "pool-info-cache-update"
+    install_cron_job "pool-info-cache-update" "*/10 * * * *"
+
     # Preprod/Preview networks use same registry as testnet.
     if [[ ${NWMAGIC} -eq 764824073 || ${NWMAGIC} -eq 1 || ${NWMAGIC} -eq 2 || ${NWMAGIC} -eq 141 ]]; then
       get_cron_job_executable "asset-registry-update"
@@ -211,9 +216,10 @@ SGVERSION=v1.3.2
       # absence of haproxy.cfg or grest.conf at mentioned path would mean setup is not updated, or has not been run - hence, overwrite all
       [[ ! -f "${HAPROXY_CFG}" ]] || [[ ! -f "${CNODE_HOME}"/priv/grest.conf ]] && OVERWRITE_CONFIG="Y"
     else
-      [[ "${I_ARGS}" =~ "p" ]] && INSTALL_POSTGREST="Y" && DB_QRY_UPDATES="Y"
+      [[ "${I_ARGS}" =~ "p" ]] && INSTALL_POSTGREST="Y"
       [[ "${I_ARGS}" =~ "r" ]] && INSTALL_HAPROXY="Y"
       [[ "${I_ARGS}" =~ "m" ]] && INSTALL_MONITORING_AGENTS="Y"
+      [[ "${I_ARGS}" =~ "g" ]] && INSTALL_PG_CARDANO="Y"
       [[ "${I_ARGS}" =~ "c" ]] && OVERWRITE_CONFIG="Y"
       [[ "${I_ARGS}" =~ "d" ]] && OVERWRITE_SYSTEMD="Y"
     fi
@@ -672,6 +678,7 @@ SGVERSION=v1.3.2
   if [[ "${INSTALL_POSTGREST}" == "Y" ]]; then setup_db_basics; deploy_postgrest; fi
   if [[ "${INSTALL_HAPROXY}" == "Y" ]]; then deploy_haproxy; fi
   if [[ "${INSTALL_MONITORING_AGENTS}" == "Y" ]]; then deploy_monitoring_agents; fi
+  if [[ "${INSTALL_PG_CARDANO}" == "Y" ]]; then deploy_pgcardano_ext; fi
   if [[ "${OVERWRITE_CONFIG}" == "Y" ]]; then deploy_configs; fi
   if [[ "${OVERWRITE_SYSTEMD}" == "Y" ]]; then deploy_systemd; fi
   if [[ "${RESET_GREST}" == "Y" ]]; then remove_all_grest_cron_jobs; reset_grest; deploy_pgcardano_ext; fi
