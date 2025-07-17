@@ -1,0 +1,15 @@
+{
+  "localRoots": [
+    {
+      "accessPoints": [
+        { "address": "relay-0.prime.testnet.apexfusion.org", "port": 5521 },
+        { "address": "relay-1.prime.testnet.apexfusion.org", "port": 5521 }
+      ],
+      "advertise": true,
+      "trustable": true,
+      "hotValency": 1
+    }
+  ],
+  "publicRoots" : [],
+  "useLedgerAfterSlot": 0
+}

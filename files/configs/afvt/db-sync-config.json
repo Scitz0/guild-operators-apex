@@ -1,10 +1,10 @@
 {
   "EnableLogMetrics": false,
   "EnableLogging": true,
-  "NetworkName": "afpt",
+  "NetworkName": "afvt",
   "NodeConfigFile": "/opt/cardano/cnode/files/config.json",
   "PrometheusPort": 8080,
-  "RequiresNetworkMagic": "RequiresMagic",
+  "RequiresNetworkMagic": "RequiresNoMagic",
   "EnableFutureGenesis": true,
   "defaultBackends": [
     "KatipBK"

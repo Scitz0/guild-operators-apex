@@ -4,7 +4,7 @@
   "NetworkName": "afpm",
   "NodeConfigFile": "/opt/cardano/cnode/files/config.json",
   "PrometheusPort": 8080,
-  "RequiresNetworkMagic": "RequiresMagic",
+  "RequiresNetworkMagic": "RequiresNoMagic",
   "EnableFutureGenesis": true,
   "defaultBackends": [
     "KatipBK"
@@ -17,7 +17,8 @@
   ],
   "insert_options": {
     "tx_out": {
-      "value": "consumed"
+      "value": "consumed",
+      "use_address_table": true
     },
     "ledger": "enable",
     "shelley": {
@@ -32,12 +33,11 @@
     "plutus": {
       "enable": true
     },
-    "governance": "disable",
+    "governance": "enable",
     "json_type": "text",
     "offchain_pool_data": "enable",
     "pool_stat": "enable",
-    "pool_stats": "enable",
-    "tx_cbor": "disable"
+    "tx_cbor": "enable"
   },
   "minSeverity": "Info",
   "options": {
