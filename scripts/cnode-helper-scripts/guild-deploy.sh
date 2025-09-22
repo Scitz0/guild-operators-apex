@@ -61,7 +61,7 @@ versionCheck() { printf '%s\n%s' "${1//v/}" "${2//v/}" | sort -C -V; } #$1=avail
 usage() {
   cat <<-EOF >&2
 
-		Usage: $(basename "$0") [-n <afpm|afpt|afvt>] [-p path] [-t <name>] [-b <branch>] [-u] [-s [p][b][l][m][d][c][o][w][x][f][s]]
+		Usage: $(basename "$0") [-n <afpm|afvm|afpt|afvt>] [-p path] [-t <name>] [-b <branch>] [-u] [-s [p][b][l][m][d][c][o][w][x][f][s]]
 		Set up dependencies for building/using common tools across cardano ecosystem.
 		The script will always update dynamic content from existing scripts retaining existing user variables
 
@@ -606,7 +606,7 @@ populate_cnode() {
   # Download node config, genesis and topology from template
   #NWCONFURL="https://raw.githubusercontent.com/input-output-hk/cardano-playground/main/static/book.play.dev.cardano.org/environments"
   NWCONFURL="${URL_RAW}/files/configs/${NETWORK}/"
-  if [[ ${NETWORK} =~ ^(afpm|afpt|afvt)$ ]]; then
+  if [[ ${NETWORK} =~ ^(afpm|afvm|afpt|afvt)$ ]]; then
     curl -sL -f -m ${CURL_TIMEOUT} -o alonzo-genesis.json.tmp "${NWCONFURL}/alonzo-genesis.json" || err_exit "${err_msg} alonzo-genesis.json"
     curl -sL -f -m ${CURL_TIMEOUT} -o byron-genesis.json.tmp "${NWCONFURL}/byron-genesis.json" || err_exit "${err_msg} byron-genesis.json"
     curl -sL -f -m ${CURL_TIMEOUT} -o conway-genesis.json.tmp "${NWCONFURL}/conway-genesis.json" || err_exit "${err_msg} conway-genesis.json"
@@ -615,7 +615,7 @@ populate_cnode() {
     curl -sL -f -m ${CURL_TIMEOUT} -o config.json.tmp "${NWCONFURL}/config.json" || err_exit "${err_msg} config.json"
     curl -sL -f -m ${CURL_TIMEOUT} -o dbsync.json.tmp "${NWCONFURL}/db-sync-config.json" || err_exit "${err_msg} dbsync-sync-config.json"
   else
-    err_exit "Unknown network specified! Kindly re-check the network name, valid options are: afpm, afpt & afvt."
+    err_exit "Unknown network specified! Kindly re-check the network name, valid options are: afpm, afvm, afpt & afvt."
   fi
   sed -e "s@/opt/cardano/cnode@${CNODE_HOME}@g" -i ./*.json.tmp
   if [[ ${FORCE_OVERWRITE} = 'Y' ]]; then

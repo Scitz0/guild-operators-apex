@@ -1,0 +1,64 @@
+{
+  "activeSlotsCoeff": 0.25,
+  "epochLength": 86400,
+  "genDelegs": {
+    "1055f5e5db6c2587a4bce74411337a0279457d6737ce1b96f4d82e5a": {
+      "delegate": "345c8359ef8d428b5b0535cc0a8501495262c2f21e8f6c927001853c",
+      "vrf": "bb1726c503d808ffe5ad0d21b299c57fb1d23ef3667bc387e3dd082d7dbb7830"
+    },
+    "6afa2b5846a087c2f50948462b1199ecfa5a7ce63cb5a6c084d53825": {
+      "delegate": "24b1f94a1d5dd266fd038ce0129fa612b2d8f5481d1dd67638acefdc",
+      "vrf": "419f02e64ece70324d1d4821934fcf0bb071986a2d8fe8c9062c8db8ffc61270"
+    },
+    "82071e9669027318db8b3839fa6eee8ac4d1ed479e8e828a68179f86": {
+      "delegate": "91e2cfdd67eb7122c58e38fa5bbc52cc9a4ca32f3b617b547cc259d0",
+      "vrf": "8d4e9f701b8713ee1377ccd6c7e9ecd552b005f13ac29cfbbb94d7295599239c"
+    },
+    "9ee65e3030e3ad1e4194f657d040802278f3bdce7a30fbf9ef050199": {
+      "delegate": "d5bc5afae20482a0f42ff96765297455803808699d697986bec26d2f",
+      "vrf": "8f9118700b88be50141ada66648fd5cb35f98c0993133ea67d4ca7236ba8e6bb"
+    },
+    "fdd69d13d5ff19fb67c16d6b553e6ba510bae81a72c3082e00b7517d": {
+      "delegate": "7844fda6a6dc78b3cc769d738f1dff6096d6b4f326005bf53a72ff22",
+      "vrf": "462b8d860464695d50d195ca991dc5a7e9a8a3a21332447e4f8dcf6899a79fc3"
+    }
+  },
+  "initialFunds": {},
+  "maxKESEvolutions": 62,
+  "maxLovelaceSupply": 3000000000000000,
+  "networkId": "Mainnet",
+  "networkMagic": 764824073,
+  "protocolParams": {
+    "a0": 0.0,
+    "decentralisationParam": 1,
+    "eMax": 18,
+    "extraEntropy": {
+      "tag": "NeutralNonce"
+    },
+    "keyDeposit": 0,
+    "maxBlockBodySize": 180224,
+    "maxBlockHeaderSize": 1100,
+    "maxTxSize": 16384,
+    "minFeeA": 45,
+    "minFeeB": 156253,
+    "minPoolCost": 0,
+    "minUTxOValue": 1000000,
+    "nOpt": 100,
+    "poolDeposit": 0,
+    "protocolVersion": {
+      "major": 2,
+      "minor": 0
+    },
+    "rho": 0.00001,
+    "tau": 0.000001
+  },
+  "securityParam": 2160,
+  "slotLength": 1,
+  "slotsPerKESPeriod": 129600,
+  "staking": {
+    "pools": {},
+    "stake": {}
+  },
+  "systemStart": "2025-08-29T16:40:00.000000000Z",
+  "updateQuorum": 3
+}

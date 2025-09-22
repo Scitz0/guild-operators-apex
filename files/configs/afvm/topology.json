@@ -1,0 +1,15 @@
+{
+  "localRoots": [
+    {
+      "accessPoints": [
+        { "address": "relay-0.vector.mainnet.apexfusion.org", "port": 5521 },
+        { "address": "relay-1.vector.mainnet.apexfusion.org", "port": 5521 }
+      ],
+      "advertise": true,
+      "trustable": true,
+      "hotValency": 2
+    }
+  ],
+  "publicRoots" : [],
+  "useLedgerAfterSlot": 0
+}
