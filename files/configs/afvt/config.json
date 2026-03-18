@@ -13,7 +13,6 @@
     "QueryBatchSize": 100000,
     "SnapshotInterval": 43200
   },
-  "MaxKnownMajorProtocolVersion": 10,
   "MempoolCapacityBytesOverride": 67108864,
   "MinBigLedgerPeersForTrustedState": 5,
   "MinNodeVersion": "10.6.2",
@@ -124,6 +123,7 @@
   "TurnOnLogMetrics": true,
   "TurnOnLogging": true,
   "UseTraceDispatcher": true,
+  "MaxKnownMajorProtocolVersion": 10,
   "MaxConcurrencyBulkSync": 1,
   "MaxConcurrencyDeadline": 2,
   "PBftSignatureThreshold": 0.6,
