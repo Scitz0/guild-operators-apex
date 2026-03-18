@@ -402,7 +402,7 @@ download_cnodebins() {
   echo -e "\n  Downloading Cardano CLI ${CARDANO_CLI_VERSION} archive from GitHub.."
   [[ -z ${ARCH##*aarch64*} ]] && cli_arch="aarch64" || cli_arch="x86_64"
   curl -m 200 -sfL "https://github.com/IntersectMBO/cardano-cli/releases/download/cardano-cli-${CARDANO_CLI_VERSION}/cardano-cli-${CARDANO_CLI_VERSION}-${cli_arch}-linux.tar.gz" -o ccli.tar.gz || err_exit " Could not download cardano-cli release ${CARDANO_CLI_VERSION} from GitHub!"
-  tar zxf ccli.tar.gz --strip-components 0 cardano-cli-x86_64-linux &>/dev/null && mv cardano-cli-x86_64-linux cardano-cli
+  tar zxf ccli.tar.gz --strip-components 0 cardano-cli-${cli_arch}-linux &>/dev/null && mv cardano-cli-${cli_arch}-linux cardano-cli
   rm -f ccli.tar.gz
   [[ -f cardano-node ]] || err_exit " cardano-node archive downloaded but binary (cardano-node) not found after extracting package!"
   echo -e "\n  Downloading Cardano Addresses 3.12.0 archive from GitHub.."
