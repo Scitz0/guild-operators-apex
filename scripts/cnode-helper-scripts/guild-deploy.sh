@@ -109,8 +109,8 @@ set_defaults() {
   [[ -z "${BRANCH}" ]] && BRANCH="main"
   [[ "${SUDO}" = 'Y' ]] && sudo="sudo" || sudo=""
   [[ "${SUDO}" = 'Y' && $(id -u) -eq 0 ]] && err_exit "Please run as non-root user."
-  [[ -z "${CARDANO_NODE_VERSION}" ]] && CARDANO_NODE_VERSION="$(curl -sfk "https://raw.githubusercontent.com/${G_ACCOUNT}/guild-operators-apex/${BRANCH}/files/docker/node/release-versions/cardano-node-latest.txt" || echo "10.1.4")"
-  [[ -z "${CARDANO_CLI_VERSION}" ]] && CARDANO_CLI_VERSION="$(curl -sfk "https://raw.githubusercontent.com/${G_ACCOUNT}/guild-operators-apex/${BRANCH}/files/docker/node/release-versions/cardano-cli-latest.txt" || echo "10.11.0.0")"
+  [[ -z "${CARDANO_NODE_VERSION}" ]] && CARDANO_NODE_VERSION="$(curl -sfk "https://raw.githubusercontent.com/${G_ACCOUNT}/guild-operators/${BRANCH}/files/docker/node/release-versions/cardano-node-latest.txt" || echo "10.6.2")"
+  [[ -z "${CARDANO_CLI_VERSION}" ]] && CARDANO_CLI_VERSION="$(curl -sfk "https://raw.githubusercontent.com/${G_ACCOUNT}/guild-operators/${BRANCH}/files/docker/node/release-versions/cardano-cli-latest.txt" || echo "10.15.0.1")"
   CNODE_HOME="${CNODE_PATH}/${CNODE_NAME}"
   CNODE_VNAME=$(echo "$CNODE_NAME" | awk '{print toupper($0)}')
   [[ -z ${MITHRIL_HOME} ]] && MITHRIL_HOME="${CNODE_HOME}/mithril"
@@ -213,7 +213,7 @@ os_dependencies() {
     fi
     if [[ "${WANT_BUILD_DEPS}" == "Y" ]]; then
       libncurses_pkg="libncursesw5"
-      [[ -f /etc/debian_version ]] && grep -q trixie /etc/debian_version && libncurses_pkg="libncursesw6"
+      [[ -f /etc/debian_version ]] && grep -qE '(trixie|13)' /etc/debian_version && libncurses_pkg="libncursesw6"
       pkg_list="${pkg_list} ${libncurses_pkg} libtinfo-dev libnuma-dev libpq-dev liblmdb-dev libffi-dev libgmp-dev libssl-dev libsystemd-dev zlib1g-dev llvm clang"
     fi
     if [[ "${INSTALL_CWHCLI}" == "Y" ]]; then
@@ -376,7 +376,7 @@ build_libblst() {
 		Name: libblst
 		Description: Multilingual BLS12-381 signature library
 		URL: https://github.com/supranational/blst
-		Version: 0.3.10
+		Version: 0.3.14
 		Cflags: -I\${includedir}
 		Libs: -L\${libdir} -lblst
 		EOF
@@ -614,10 +614,12 @@ populate_cnode() {
     curl -sL -f -m ${CURL_TIMEOUT} -o topology.json.tmp "${NWCONFURL}/topology.json" || err_exit "${err_msg} topology.json"
     curl -sL -f -m ${CURL_TIMEOUT} -o config.json.tmp "${NWCONFURL}/config.json" || err_exit "${err_msg} config.json"
     curl -sL -f -m ${CURL_TIMEOUT} -o dbsync.json.tmp "${NWCONFURL}/db-sync-config.json" || err_exit "${err_msg} dbsync-sync-config.json"
+    curl -sL -f -m ${CURL_TIMEOUT} -o submitapi.json "${NWCONFURL}/submitapi.json" || err_exit "${err_msg} submitapi.json"
   else
     err_exit "Unknown network specified! Kindly re-check the network name, valid options are: afpm, afvm, afpt & afvt."
   fi
   sed -e "s@/opt/cardano/cnode@${CNODE_HOME}@g" -i ./*.json.tmp
+  sed -e "s@\"TraceOptionNodeName\": \"cnode\"@\"TraceOptionNodeName\": \"${CNODE_NAME}\"@" -i ./config.json.tmp
   if [[ ${FORCE_OVERWRITE} = 'Y' ]]; then
     [[ -f topology.json ]] && cp -f topology.json "topology.json_bkp$(date +%s)"
     [[ -f config.json ]] && cp -f config.json "config.json_bkp$(date +%s)"
@@ -645,7 +647,7 @@ populate_cnode() {
 
   [[ ${SCRIPTS_FORCE_OVERWRITE} = 'Y' ]] && echo -e "\nForced full upgrade! Please edit scripts/env, scripts/cnode.sh, scripts/dbsync.sh, scripts/submitapi.sh, scripts/ogmios.sh, scripts/gLiveView.sh and scripts/topologyUpdater.sh scripts/mithril-client.sh scripts/mithril-relay.sh scripts/mithril-signer.sh (alongwith files/topology.json, files/config.json, files/dbsync.json) as required!"
 
-  updateWithCustomConfig "blockPerf.sh"
+  #updateWithCustomConfig "blockPerf.sh"
   updateWithCustomConfig "cabal-build-all.sh"
   updateWithCustomConfig "cncli.sh"
   updateWithCustomConfig "cnode.sh"
@@ -655,7 +657,7 @@ populate_cnode() {
   updateWithCustomConfig "deploy-as-systemd.sh"
   updateWithCustomConfig "env"
   updateWithCustomConfig "gLiveView.sh"
-  updateWithCustomConfig "logMonitor.sh"
+  #updateWithCustomConfig "logMonitor.sh"
   updateWithCustomConfig "ogmios.sh"
   updateWithCustomConfig "submitapi.sh"
   updateWithCustomConfig "setup_mon.sh"

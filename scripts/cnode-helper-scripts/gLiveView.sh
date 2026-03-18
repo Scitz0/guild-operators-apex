@@ -60,7 +60,7 @@ setTheme() {
 # Do NOT modify code below           #
 ######################################
 
-GLV_VERSION=v1.31.0
+GLV_VERSION=v1.32.0
 
 PARENT="$(dirname $0)"
 
@@ -205,6 +205,9 @@ declare -gA geoIP=()
 # Style / UI                                          #
 #######################################################
 width=71
+
+# first column
+left_most_column=$(( width + 1 ))
 
 # two column view
 two_col_width=$(( (width-3)/2 ))
@@ -376,27 +379,27 @@ mvPos () {
 # Command    : mvTwoSecond
 # Description: move curser to two column view, second column start
 mvTwoSecond () {
-  printf "\033[72D\033[${two_col_second}C"
+  printf "\033[${left_most_column}D\033[${two_col_second}C"
 }
 # Command    : mvThreeSecond
 # Description: move curser to three column view, second column start
 mvThreeSecond () {
-  printf "\033[72D\033[${three_col_2_start}C"
+  printf "\033[${left_most_column}D\033[${three_col_2_start}C"
 }
 # Command    : mvThreeThird
 # Description: move curser to three column view, third column start
 mvThreeThird () {
-  printf "\033[72D\033[${three_col_3_start}C"
+  printf "\033[${left_most_column}D\033[${three_col_3_start}C"
 }
 # Command    : mvEnd
 # Description: move curser to last column
 mvEnd () {
-  printf "\033[72D\033[${width}C"
+  printf "\033[${left_most_column}D\033[${width}C"
 }
 # Command    : closeRow
 # Description: move curser to last column, print border and newline and finally increment line number
 closeRow () {
-  printf "${NC}\033[72D\033[${width}C${VL}\n" && ((line++))
+  printf "${NC}\033[${left_most_column}D\033[${width}C${VL}\n" && ((line++))
 }
 # Command    : clrLine
 # Description: clear to end of line
@@ -541,7 +544,7 @@ getOpCert () {
     fi
   fi
   if [[ -f ${opcert_file} ]]; then
-    op_cert="$(${CCLI} query kes-period-info ${NETWORK_IDENTIFIER} --op-cert-file "${opcert_file}")"
+    op_cert="$(${CCLI} query kes-period-info ${NETWORK_IDENTIFIER} --op-cert-file "${opcert_file}" 2>/dev/null)"
     [[ ${op_cert} =~ qKesNodeStateOperationalCertificateNumber.:[[:space:]]([0-9]+) ]] && op_cert_chain="${BASH_REMATCH[1]}"
     [[ ${op_cert} =~ qKesOnDiskOperationalCertificateNumber.:[[:space:]]([0-9]+) ]] && op_cert_disk="${BASH_REMATCH[1]}"
   fi
@@ -563,10 +566,10 @@ checkPeers() {
 
   if [[ ${use_lsof} = 'Y' ]]; then
     peers_in=$(lsof -Pnl +M | grep ESTABLISHED | awk -v pid="${CNODE_PID}" -v port=":${CNODE_PORT}->" '$2 == pid && $9 ~ port {print $9}' | awk -F "->" '{print $2}')
-    peers_out=$(lsof -Pnl +M | grep ESTABLISHED | awk -v pid="${CNODE_PID}" -v port=":(${CNODE_PORT}|${EKG_PORT}|${PROM_PORT})->" '$2 == pid && $9 !~ port {print $9}' | awk -F "->" '{print $2}')
+    peers_out=$(lsof -Pnl +M | grep ESTABLISHED | awk -v pid="${CNODE_PID}" -v port=":(${CNODE_PORT}|${PROM_PORT})->" '$2 == pid && $9 !~ port {print $9}' | awk -F "->" '{print $2}')
   else
     peers_in=$(ss -tnp state established 2>/dev/null | grep "${CNODE_PID}," | awk -v port=":${CNODE_PORT}" '$3 ~ port {print $4}')
-    peers_out=$(ss -tnp state established 2>/dev/null | grep "${CNODE_PID}," | awk -v port=":(${CNODE_PORT}|${EKG_PORT}|${PROM_PORT})" '$3 !~ port {print $4}')
+    peers_out=$(ss -tnp state established 2>/dev/null | grep "${CNODE_PID}," | awk -v port=":(${CNODE_PORT}|${PROM_PORT})" '$3 !~ port {print $4}')
   fi
 
   [[ -z ${peers_in} && -z ${peers_out} ]] && return
@@ -729,6 +732,14 @@ checkNodeVersion() {
     printf "\n\n Deployed version : ${node_version} (${node_rev}) => ${CNODEBIN}"
     printf "\n Running version  : ${running_node_version} (${running_node_rev})\n"
     waitToProceed && clrScreen
+  fi
+}
+
+getBlockReplayStatus() {
+  unset replay_log_line block_replay_pct
+  if command -v journalctl >/dev/null && command -v systemctl >/dev/null && systemctl is-active --quiet ${CNODE_VNAME}.service 2>/dev/null; then
+    replay_log_line=$(journalctl -n 1 -u ${CNODE_VNAME}.service 2>/dev/null | grep LedgerReplay)
+    [[ ${replay_log_line} =~ ([0-9.]+)% ]] && block_replay_pct=${BASH_REMATCH[1]}
   fi
 }
 
@@ -1035,7 +1046,7 @@ while true; do
       mvPos ${line} 1
     fi
   elif [[ ${show_home_info} = "true" ]]; then
-    printf "${VL}${STANDOUT} INFO ${NC} Displays live metrics gathered from node EKG endpoint" && closeRow
+    printf "${VL}${STANDOUT} INFO ${NC} Displays live metrics gathered from node Prometheus endpoint" && closeRow
     printf "${blank_line}\n" && ((line++))
     printf "${VL} ${style_values_2}Upper Main Section${NC}" && closeRow
     printf "${VL} Epoch number & progress is live from node while calculation of date" && closeRow
@@ -1061,7 +1072,7 @@ while true; do
     printf "${VL} bar counting down until next slot leader. The progress bar color" && closeRow
     printf "${VL} indicates the time range. Green is 1 epoch, Tan is 1 day, red is 1" && closeRow
     printf "${VL} hour, Magenta is 5 minutes. If CNCLI is not activated blocks created" && closeRow
-    printf "${VL} is taken from EKG metrics." && closeRow
+    printf "${VL} is taken from Prometheus metrics." && closeRow
     printf "${blank_line}\n" && ((line++))
     printf "${VL} - Leader    : scheduled to make block at this slot" && closeRow
     printf "${VL} - Ideal     : Expected/Ideal number of blocks assigned" && closeRow
@@ -1100,6 +1111,8 @@ while true; do
 
     printf "${blank_line}\n" && ((line++))
 
+    [[ ${slotnum} -eq 0 ]] && getBlockReplayStatus
+
     tip_ref=$(getSlotTipRef)
     tip_diff=$(( tip_ref - slotnum ))
 
@@ -1115,7 +1128,11 @@ while true; do
     printf "${VL} Slot       : ${style_values_1}%-${three_col_value_width}s${NC}" "${slotnum}"
     mvThreeSecond
     if [[ ${slotnum} -eq 0 ]]; then
-      printf "Status     : ${style_info}%-${three_col_value_width}s${NC}" "starting"
+      if [[ -n ${block_replay_pct} ]]; then
+        printf "DB Replay  : ${style_info}%-${three_col_value_width}s${NC}" "${block_replay_pct}%"
+      else
+        printf "Status     : ${style_info}%-${three_col_value_width}s${NC}" "starting"
+      fi
     elif [[ ${SHELLEY_TRANS_EPOCH} -eq -1 ]]; then
       printf "Status     : ${style_info}%-${three_col_value_width}s${NC}" "syncing"
     elif [[ ${tip_diff} -le $(slotInterval) ]]; then

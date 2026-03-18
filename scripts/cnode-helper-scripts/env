@@ -19,12 +19,9 @@
 #DB_DIR="${CNODE_HOME}/db"                              # Folder to store the cardano-node blockchain db
 #UPDATE_CHECK="Y"                                       # Check for updates to scripts, it will still be prompted before proceeding (Y|N).
 #TMP_DIR="/tmp/cnode"                                   # Folder to hold temporary files in the various scripts, each script might create additional subfolders
-#USE_EKG="Y"                                            # Use EKG metrics from the node instead of Prometheus. Prometheus metrics yield slightly better performance but can be unresponsive at times (default EKG)
-#EKG_HOST=127.0.0.1                                     # Set node EKG host IP
-#EKG_PORT=12788                                         # Override automatic detection of node EKG port
 #PROM_HOST=127.0.0.1                                    # Set node Prometheus host IP
 #PROM_PORT=12798                                        # Override automatic detection of node Prometheus port
-#EKG_TIMEOUT=3                                          # Maximum time in seconds that you allow EKG request to take before aborting (node metrics)
+#PROM_TIMEOUT=3                                         # Maximum time in seconds that you allow Prometheus request to take before aborting (node metrics)
 #CURL_TIMEOUT=10                                        # Maximum time in seconds that you allow curl file download to take before aborting (GitHub update process)
 #BLOCKLOG_DIR="${CNODE_HOME}/guild-db/blocklog"         # Override default directory used to store block data for core node
 #BLOCKLOG_TZ="UTC"                                      # TimeZone to use when displaying blocklog - https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
@@ -151,8 +148,8 @@ versionCheck() {
 #             : $2=current_version
 versionCheckNode() {
   [[ ${STRICT_VERSION_CHECK} = N ]] && return 0
-  w_ver=${1//v/}; w_ver_dots=${w_ver//[^.]}; [[ ${#w_ver_dots} -gt 1 && ${w_ver} =~ ^([0-9]+.[0-9]) ]] && w_ver=${BASH_REMATCH[1]}
-  c_ver=${2//v/}; c_ver_dots=${c_ver//[^.]}; [[ ${#c_ver_dots} -gt 1 && ${c_ver} =~ ^([0-9]+.[0-9]) ]] && c_ver=${BASH_REMATCH[1]}
+  w_ver=${1//v/}; w_ver_dots=${w_ver//[^.]}; [[ ${#w_ver_dots} -gt 1 && ${w_ver} =~ ^([0-9]+.[0-9]+.[0-9]+) ]] && w_ver=${BASH_REMATCH[1]}
+  c_ver=${2//v/}; c_ver_dots=${c_ver//[^.]}; [[ ${#c_ver_dots} -gt 1 && ${c_ver} =~ ^([0-9]+.[0-9]+.[0-9]+) ]] && c_ver=${BASH_REMATCH[1]}
   printf '%s\n%s' "${w_ver}" "${c_ver}" | sort -C -V
 }
 
@@ -599,111 +596,46 @@ createDistanceToBottom() {
 getNodeMetrics() {
   CNODE_PID=$(pgrep -fn "$(basename ${CNODEBIN}).*.--port ${CNODE_PORT}") # Define again - as node could be restarted since last attempt of sourcing env
   [[ -n ${CNODE_PID} ]] && uptimes=$(( $(date -u +%s) - $(date -d "$(ps -p ${CNODE_PID} -o lstart=)" +%s) )) || uptimes=0
-  if [[ ${USE_EKG} = 'Y' ]]; then
-    node_metrics=$(curl -s -m ${EKG_TIMEOUT} -H 'Accept: application/json' "http://${EKG_HOST}:${EKG_PORT}/" 2>/dev/null)
-    node_metrics_tsv=$(jq -r '[
-    .cardano.node.metrics.blockNum.int.val //0,
-    .cardano.node.metrics.epoch.int.val //0,
-    .cardano.node.metrics.slotInEpoch.int.val //0,
-    .cardano.node.metrics.slotNum.int.val //0,
-    .cardano.node.metrics.density.real.val //"-",
-    .cardano.node.metrics.txsProcessedNum.int.val //0,
-    .cardano.node.metrics.txsInMempool.int.val //0,
-    .cardano.node.metrics.mempoolBytes.int.val //0,
-    .cardano.node.metrics.currentKESPeriod.int.val //0,
-    .cardano.node.metrics.remainingKESPeriods.int.val //0,
-    .cardano.node.metrics.Forge["node-is-leader"].int.val //0,
-    .cardano.node.metrics.Forge.adopted.int.val //0,
-    .cardano.node.metrics.Forge["didnt-adopt"].int.val //0,
-    .cardano.node.metrics.Forge["forge-about-to-lead"].int.val //0,
-    .cardano.node.metrics.slotsMissedNum.int.val //0,
-    .cardano.node.metrics.RTS.gcLiveBytes.int.val //0,
-    .cardano.node.metrics.RTS.gcHeapBytes.int.val //0,
-    .cardano.node.metrics.RTS.gcMinorNum.int.val //0,
-    .cardano.node.metrics.RTS.gcMajorNum.int.val //0,
-    .cardano.node.metrics.forks.int.val //0,
-    .cardano.node.metrics.blockfetchclient.blockdelay.s.val //0,
-    .cardano.node.metrics.served.block.count.int.val //0,
-    .cardano.node.metrics.blockfetchclient.lateblocks.val //0,
-    .cardano.node.metrics.blockfetchclient.blockdelay.cdfOne.val //0,
-    .cardano.node.metrics.blockfetchclient.blockdelay.cdfThree.val //0,
-    .cardano.node.metrics.blockfetchclient.blockdelay.cdfFive.val //0,
-    .cardano.node.metrics.peerSelection.cold.val //0,
-    .cardano.node.metrics.peerSelection.warm.val //0,
-    .cardano.node.metrics.peerSelection.hot.val //0,
-    .cardano.node.metrics.connectionManager.incomingConns.val //0,
-    .cardano.node.metrics.connectionManager.outgoingConns.val //0,
-    .cardano.node.metrics.connectionManager.unidirectionalConns.val //0,
-    .cardano.node.metrics.connectionManager.duplexConns.val //0,
-    .cardano.node.metrics.connectionManager.fullDuplexConns.val //0,
-    .cardano.node.metrics.forging_enabled.val //0,
-    .cardano.node.metrics.cardano_build_info.val //"-",
-    .cardano.node.metrics.inboundGovernor.warm.val //0,
-    .cardano.node.metrics.inboundGovernor.hot.val //0
-    ] | @tsv' <<< "${node_metrics}")
-    read -ra node_metrics_arr <<< ${node_metrics_tsv}
-    blocknum=${node_metrics_arr[0]}; epochnum=${node_metrics_arr[1]}; slot_in_epoch=${node_metrics_arr[2]}; slotnum=${node_metrics_arr[3]}
-    [[ ${node_metrics_arr[4]} != '-' ]] && density=$(bc <<< "scale=3;$(printf '%3.5f' "${node_metrics_arr[4]}")*100/1") || density=0.0
-    tx_processed=${node_metrics_arr[5]}; mempool_tx=${node_metrics_arr[6]}; mempool_bytes=${node_metrics_arr[7]}
-    kesperiod=${node_metrics_arr[8]}; remaining_kes_periods=${node_metrics_arr[9]}
-    isleader=${node_metrics_arr[10]}; adopted=${node_metrics_arr[11]}; didntadopt=${node_metrics_arr[12]}; about_to_lead=${node_metrics_arr[13]}
-    missed_slots=${node_metrics_arr[14]}
-    mem_live=${node_metrics_arr[15]}; mem_heap=${node_metrics_arr[16]}
-    gc_minor=${node_metrics_arr[17]}; gc_major=${node_metrics_arr[18]}
-    forks=${node_metrics_arr[19]}
-    block_delay=${node_metrics_arr[20]}; blocks_served=${node_metrics_arr[21]}; blocks_late=${node_metrics_arr[22]};
-    printf -v blocks_w1s "%.6f" "${node_metrics_arr[23]}"
-    printf -v blocks_w3s "%.6f" "${node_metrics_arr[24]}"
-    printf -v blocks_w5s "%.6f" "${node_metrics_arr[25]}"
-    peer_selection_cold=${node_metrics_arr[26]}; peer_selection_warm=${node_metrics_arr[27]}; peer_selection_hot=${node_metrics_arr[28]}
-    conn_incoming=${node_metrics_arr[29]}; conn_outgoing=${node_metrics_arr[30]}
-    conn_uni_dir=${node_metrics_arr[31]}; conn_bi_dir=${node_metrics_arr[32]}; conn_duplex=${node_metrics_arr[33]}
-    forging_enabled=${node_metrics_arr[34]}
-    [[ ${node_metrics_arr[35]} =~ ,version=\"([0-9.]*)\" ]] && running_node_version=${BASH_REMATCH[1]} || running_node_version="?"
-    [[ ${node_metrics_arr[35]} =~ ,revision=\"([0-9a-f]*)\" ]] && running_node_rev=${BASH_REMATCH[1]:0:8} || running_node_rev="?"
-    inbound_governor_warm=${node_metrics_arr[36]}; inbound_governor_hot=${node_metrics_arr[37]};
-  else
-    node_metrics=$(curl -s -m ${EKG_TIMEOUT} "http://${PROM_HOST}:${PROM_PORT}/metrics" 2>/dev/null)
-    [[ ${node_metrics} =~ cardano_node_metrics_blockNum_int[[:space:]]([^[:space:]]*) ]] && blocknum=${BASH_REMATCH[1]} || blocknum=0
-    [[ ${node_metrics} =~ cardano_node_metrics_epoch_int[[:space:]]([^[:space:]]*) ]] && epochnum=${BASH_REMATCH[1]} || epochnum=0
-    [[ ${node_metrics} =~ cardano_node_metrics_slotInEpoch_int[[:space:]]([^[:space:]]*) ]] && slot_in_epoch=${BASH_REMATCH[1]} || slot_in_epoch=0
-    [[ ${node_metrics} =~ cardano_node_metrics_slotNum_int[[:space:]]([^[:space:]]*) ]] && slotnum=${BASH_REMATCH[1]} || slotnum=0
-    [[ ${node_metrics} =~ cardano_node_metrics_density_real[[:space:]]([^[:space:]]*) ]] && density=$(bc <<< "scale=3;$(printf '%3.5f' "${BASH_REMATCH[1]}")*100/1") || density=0.0
-    [[ ${node_metrics} =~ cardano_node_metrics_txsProcessedNum_int[[:space:]]([^[:space:]]*) ]] && tx_processed=${BASH_REMATCH[1]} || tx_processed=0
-    [[ ${node_metrics} =~ cardano_node_metrics_txsInMempool_int[[:space:]]([^[:space:]]*) ]] && mempool_tx=${BASH_REMATCH[1]} || mempool_tx=0
-    [[ ${node_metrics} =~ cardano_node_metrics_mempoolBytes_int[[:space:]]([^[:space:]]*) ]] && mempool_bytes=${BASH_REMATCH[1]} || mempool_bytes=0
-    [[ ${node_metrics} =~ cardano_node_metrics_currentKESPeriod_int[[:space:]]([^[:space:]]*) ]] && kesperiod=${BASH_REMATCH[1]} || kesperiod=0
-    [[ ${node_metrics} =~ cardano_node_metrics_remainingKESPeriods_int[[:space:]]([^[:space:]]*) ]] && remaining_kes_periods=${BASH_REMATCH[1]} || remaining_kes_periods=0
-    [[ ${node_metrics} =~ cardano_node_metrics_Forge_node_is_leader_int[[:space:]]([^[:space:]]*) ]] && isleader=${BASH_REMATCH[1]} || isleader=0
-    [[ ${node_metrics} =~ cardano_node_metrics_Forge_adopted_int[[:space:]]([^[:space:]]*) ]] && adopted=${BASH_REMATCH[1]} || adopted=0
-    [[ ${node_metrics} =~ cardano_node_metrics_Forge_didnt_adopt_int[[:space:]]([^[:space:]]*) ]] && didntadopt=${BASH_REMATCH[1]} || didntadopt=0
-    [[ ${node_metrics} =~ cardano_node_metrics_Forge_forge_about_to_lead_int[[:space:]]([^[:space:]]*) ]] && about_to_lead=${BASH_REMATCH[1]} || about_to_lead=0
-    [[ ${node_metrics} =~ cardano_node_metrics_slotsMissedNum_int[[:space:]]([^[:space:]]*) ]] && missed_slots=${BASH_REMATCH[1]} || missed_slots=0
-    [[ ${node_metrics} =~ cardano_node_metrics_RTS_gcLiveBytes_int[[:space:]]([^[:space:]]*) ]] && mem_live=${BASH_REMATCH[1]} || mem_live=0
-    [[ ${node_metrics} =~ cardano_node_metrics_RTS_gcHeapBytes_int[[:space:]]([^[:space:]]*) ]] && mem_heap=${BASH_REMATCH[1]} || mem_heap=0
-    [[ ${node_metrics} =~ cardano_node_metrics_RTS_gcMinorNum_int[[:space:]]([^[:space:]]*) ]] && gc_minor=${BASH_REMATCH[1]} || gc_minor=0
-    [[ ${node_metrics} =~ cardano_node_metrics_RTS_gcMajorNum_int[[:space:]]([^[:space:]]*) ]] && gc_major=${BASH_REMATCH[1]} || gc_major=0
-    [[ ${node_metrics} =~ cardano_node_metrics_forks_int[[:space:]]([^[:space:]]*) ]] && forks=${BASH_REMATCH[1]} || forks=0
-    [[ ${node_metrics} =~ cardano_node_metrics_blockfetchclient_blockdelay_s[[:space:]]([^[:space:]]*) ]] && block_delay=${BASH_REMATCH[1]} || block_delay=0
-    [[ ${node_metrics} =~ cardano_node_metrics_served_block_count_int[[:space:]]([^[:space:]]*) ]] && blocks_served=${BASH_REMATCH[1]} || blocks_served=0
-    [[ ${node_metrics} =~ cardano_node_metrics_blockfetchclient_lateblocks[[:space:]]([^[:space:]]*) ]] && blocks_late=${BASH_REMATCH[1]} || blocks_late=0
-    [[ ${node_metrics} =~ cardano_node_metrics_blockfetchclient_blockdelay_cdfOne[[:space:]]([^[:space:]]*) ]] && printf -v blocks_w1s "%.6f" ${BASH_REMATCH[1]} || blocks_w1s=0
-    [[ ${node_metrics} =~ cardano_node_metrics_blockfetchclient_blockdelay_cdfThree[[:space:]]([^[:space:]]*) ]] && printf -v blocks_w3s "%.6f" ${BASH_REMATCH[1]} || blocks_w3s=0
-    [[ ${node_metrics} =~ cardano_node_metrics_blockfetchclient_blockdelay_cdfFive[[:space:]]([^[:space:]]*) ]] && printf -v blocks_w5s "%.6f" ${BASH_REMATCH[1]} || blocks_w5s=0
-    [[ ${node_metrics} =~ cardano_node_metrics_peerSelection_cold[[:space:]]([^[:space:]]*) ]] && peer_selection_cold=${BASH_REMATCH[1]} || peer_selection_cold=0
-    [[ ${node_metrics} =~ cardano_node_metrics_peerSelection_warm[[:space:]]([^[:space:]]*) ]] && peer_selection_warm=${BASH_REMATCH[1]} || peer_selection_warm=0
-    [[ ${node_metrics} =~ cardano_node_metrics_peerSelection_hot[[:space:]]([^[:space:]]*) ]] && peer_selection_hot=${BASH_REMATCH[1]} || peer_selection_hot=0
-    [[ ${node_metrics} =~ cardano_node_metrics_connectionManager_incomingConns[[:space:]]([^[:space:]]*) ]] && conn_incoming=${BASH_REMATCH[1]} || conn_incoming=0
-    [[ ${node_metrics} =~ cardano_node_metrics_connectionManager_outgoingConns[[:space:]]([^[:space:]]*) ]] && conn_outgoing=${BASH_REMATCH[1]} || conn_outgoing=0
-    [[ ${node_metrics} =~ cardano_node_metrics_connectionManager_unidirectionalConns[[:space:]]([^[:space:]]*) ]] && conn_uni_dir=${BASH_REMATCH[1]} || conn_uni_dir=0
-    [[ ${node_metrics} =~ cardano_node_metrics_connectionManager_duplexConns[[:space:]]([^[:space:]]*) ]] && conn_bi_dir=${BASH_REMATCH[1]} || conn_bi_dir=0
-    [[ ${node_metrics} =~ cardano_node_metrics_connectionManager_fullDuplexConns[[:space:]]([^[:space:]]*) ]] && conn_duplex=${BASH_REMATCH[1]} || conn_duplex=0
-    [[ ${node_metrics} =~ cardano_node_metrics_forging_enabled[[:space:]]([^[:space:]]*) ]] && forging_enabled=${BASH_REMATCH[1]} || forging_enabled=0
-    [[ ${node_metrics} =~ cardano_node_metrics_cardano_build_info[[:space:]].*,version=\"([0-9.]*)\" ]] && running_node_version=${BASH_REMATCH[1]} || running_node_version="?"
-    [[ ${node_metrics} =~ cardano_node_metrics_cardano_build_info[[:space:]].*,revision=\"([0-9a-f]*)\" ]] && running_node_rev=${BASH_REMATCH[1]:0:8} || running_node_rev="?"
-    [[ ${node_metrics} =~ cardano_node_metrics_inboundGovernor_warm[[:space:]]([^[:space:]]*) ]] && inbound_governor_warm=${BASH_REMATCH[1]} || inbound_governor_warm=0
-    [[ ${node_metrics} =~ cardano_node_metrics_inboundGovernor_hot[[:space:]]([^[:space:]]*) ]] && inbound_governor_hot=${BASH_REMATCH[1]} || inbound_governor_hot=0
-  fi
+  node_metrics=$(curl -s -m ${PROM_TIMEOUT} "http://${PROM_HOST}:${PROM_PORT}/metrics" | grep -v '^# ' 2>/dev/null)
+  [[ ${node_metrics} =~ cardano_node_metrics_blockNum_int[[:space:]]([^[:space:]]*) ]] && blocknum=${BASH_REMATCH[1]} || blocknum=0
+  [[ ${node_metrics} =~ cardano_node_metrics_epoch_int[[:space:]]([^[:space:]]*) ]] && epochnum=${BASH_REMATCH[1]} || epochnum=0
+  [[ ${node_metrics} =~ cardano_node_metrics_slotInEpoch_int[[:space:]]([^[:space:]]*) ]] && slot_in_epoch=${BASH_REMATCH[1]} || slot_in_epoch=0
+  [[ ${node_metrics} =~ cardano_node_metrics_slotNum_int[[:space:]]([^[:space:]]*) ]] && slotnum=${BASH_REMATCH[1]} || slotnum=0
+  [[ ${node_metrics} =~ cardano_node_metrics_density_real[[:space:]]([^[:space:]]*) ]] && density=$(bc <<< "scale=3;$(printf '%3.5f' ${BASH_REMATCH[1]})*100/1") || density=0.0
+  [[ ${node_metrics} =~ cardano_node_metrics_txsProcessedNum_(int|counter)[[:space:]]([^[:space:]]*) ]] && tx_processed=${BASH_REMATCH[2]} || tx_processed=0
+  [[ ${node_metrics} =~ cardano_node_metrics_txsInMempool_int[[:space:]]([^[:space:]]*) ]] && mempool_tx=${BASH_REMATCH[1]} || mempool_tx=0
+  [[ ${node_metrics} =~ cardano_node_metrics_mempoolBytes_int[[:space:]]([^[:space:]]*) ]] && mempool_bytes=${BASH_REMATCH[1]} || mempool_bytes=0
+  [[ ${node_metrics} =~ cardano_node_metrics_currentKESPeriod_int[[:space:]]([^[:space:]]*) ]] && kesperiod=${BASH_REMATCH[1]} || kesperiod=0
+  [[ ${node_metrics} =~ cardano_node_metrics_remainingKESPeriods_int[[:space:]]([^[:space:]]*) ]] && remaining_kes_periods=${BASH_REMATCH[1]} || remaining_kes_periods=0
+  [[ ${node_metrics} =~ cardano_node_metrics_Forge_node_is_leader_(int|counter)[[:space:]]([^[:space:]]*) ]] && isleader=${BASH_REMATCH[2]} || isleader=0
+  [[ ${node_metrics} =~ cardano_node_metrics_Forge_adopted_(int|counter)[[:space:]]([^[:space:]]*) ]] && adopted=${BASH_REMATCH[2]} || adopted=0
+  [[ ${node_metrics} =~ cardano_node_metrics_Forge_forged_(int|counter)[[:space:]]([^[:space:]]*) ]] && didntadopt=$(( BASH_REMATCH[2] - adopted ))  || dintadopt=0
+  [[ ${node_metrics} =~ cardano_node_metrics_Forge(_forge|)_about_to_lead_(int|counter)[[:space:]]([^[:space:]]*) ]] && about_to_lead=${BASH_REMATCH[3]} || about_to_lead=0
+  [[ ${node_metrics} =~ cardano_node_metrics_slotsMissed(Num|)_int[[:space:]]([^[:space:]]*) ]] && missed_slots=${BASH_REMATCH[2]} || missed_slots=0
+  [[ ${node_metrics} =~ cardano_node_metrics_RTS_gcLiveBytes_int[[:space:]]([^[:space:]]*) ]] && mem_live=${BASH_REMATCH[1]} || mem_live=0
+  [[ ${node_metrics} =~ cardano_node_metrics_RTS_gcHeapBytes_int[[:space:]]([^[:space:]]*) ]] && mem_heap=${BASH_REMATCH[1]} || mem_heap=0
+  [[ ${node_metrics} =~ cardano_node_metrics_RTS_gcMinorNum_int[[:space:]]([^[:space:]]*) ]] && gc_minor=${BASH_REMATCH[1]} || gc_minor=0
+  [[ ${node_metrics} =~ cardano_node_metrics_RTS_gcMajorNum_int[[:space:]]([^[:space:]]*) ]] && gc_major=${BASH_REMATCH[1]} || gc_major=0
+  [[ ${node_metrics} =~ cardano_node_metrics_forks_(int|counter)[[:space:]]([^[:space:]]*) ]] && forks=${BASH_REMATCH[2]} || forks=0
+  [[ ${node_metrics} =~ cardano_node_metrics_blockfetchclient_blockdelay_(s|real)[[:space:]]([^[:space:]]*) ]] && block_delay=${BASH_REMATCH[2]} || block_delay=0
+  [[ ${node_metrics} =~ cardano_node_metrics_served_block_count(er|_int)[[:space:]]([^[:space:]]*) ]] && blocks_served=${BASH_REMATCH[2]} || blocks_served=0
+  [[ ${node_metrics} =~ cardano_node_metrics_blockfetchclient_lateblocks(_counter|)[[:space:]]([^[:space:]]*) ]] && blocks_late=${BASH_REMATCH[2]} || blocks_late=0
+  [[ ${node_metrics} =~ cardano_node_metrics_blockfetchclient_blockdelay_cdfOne(_real|)[[:space:]]([^[:space:]]*) ]] && printf -v blocks_w1s "%.6f" ${BASH_REMATCH[2]} || blocks_w1s=0
+  [[ ${node_metrics} =~ cardano_node_metrics_blockfetchclient_blockdelay_cdfThree(_real|)[[:space:]]([^[:space:]]*) ]] && printf -v blocks_w3s "%.6f" ${BASH_REMATCH[2]} || blocks_w3s=0
+  [[ ${node_metrics} =~ cardano_node_metrics_blockfetchclient_blockdelay_cdfFive(_real|)[[:space:]]([^[:space:]]*) ]] && printf -v blocks_w5s "%.6f" ${BASH_REMATCH[2]} || blocks_w5s=0
+  [[ ${node_metrics} =~ cardano_node_metrics_peerSelection_[cC]old(_int|)[[:space:]]([^[:space:]]*) ]] && peer_selection_cold=${BASH_REMATCH[2]} || peer_selection_cold=0
+  [[ ${node_metrics} =~ cardano_node_metrics_peerSelection_[wW]arm(_int|)[[:space:]]([^[:space:]]*) ]] && peer_selection_warm=${BASH_REMATCH[2]} || peer_selection_warm=0
+  [[ ${node_metrics} =~ cardano_node_metrics_peerSelection_[hH]ot(_int|)[[:space:]]([^[:space:]]*) ]] && peer_selection_hot=${BASH_REMATCH[2]} || peer_selection_hot=0
+  [[ ${node_metrics} =~ cardano_node_metrics_connectionManager_(incoming|inbound)Conns(_int|)[[:space:]]([^[:space:]]*) ]] && conn_incoming=${BASH_REMATCH[3]} || conn_incoming=0
+  [[ ${node_metrics} =~ cardano_node_metrics_connectionManager_(outgoing|outbound)Conns(_int|)[[:space:]]([^[:space:]]*) ]] && conn_outgoing=${BASH_REMATCH[3]} || conn_outgoing=0
+  [[ ${node_metrics} =~ cardano_node_metrics_connectionManager_unidirectionalConns(_int|)[[:space:]]([^[:space:]]*) ]] && conn_uni_dir=${BASH_REMATCH[2]} || conn_uni_dir=0
+  [[ ${node_metrics} =~ cardano_node_metrics_connectionManager_duplexConns(_int|)[[:space:]]([^[:space:]]*) ]] && conn_bi_dir=${BASH_REMATCH[2]} || conn_bi_dir=0
+  [[ ${node_metrics} =~ cardano_node_metrics_connectionManager_fullDuplexConns(_int|)[[:space:]]([^[:space:]]*) ]] && conn_duplex=${BASH_REMATCH[2]} || conn_duplex=0
+  [[ ${node_metrics} =~ cardano_node_metrics_forging_enabled(_int|)[[:space:]]([^[:space:]]*) ]] && forging_enabled=${BASH_REMATCH[2]} || forging_enabled=0
+  [[ ${node_metrics} =~ cardano_node_metrics_cardano_build_info[[:space:]]*.*,version=\"([0-9.]*)\" ]] && running_node_version=${BASH_REMATCH[1]} || running_node_version="?"
+  [[ ${node_metrics} =~ cardano_node_metrics_cardano_build_info[[:space:]]*.*,revision=\"([0-9a-f]*)\" ]] && running_node_rev=${BASH_REMATCH[1]:0:8} || running_node_rev="?"
+  [[ ${node_metrics} =~ cardano_node_metrics_inboundGovernor_warm(_int|)[[:space:]]([^[:space:]]*) ]] && inbound_governor_warm=${BASH_REMATCH[2]} || inbound_governor_warm=0
+  [[ ${node_metrics} =~ cardano_node_metrics_inboundGovernor_hot(_int|)[[:space:]]([^[:space:]]*) ]] && inbound_governor_hot=${BASH_REMATCH[2]} || inbound_governor_hot=0
 }
 
 # Description : Get shelley transition epoch for non-predefined networks
@@ -927,6 +859,26 @@ telegramSend() {
   fi
 }
 
+check_valid_host() {
+    local host="$1"
+    local name="$2"
+
+    if [[ -z "$host" ]] || { ! isValidIPv4 "$host" && ! isValidHostnameOrDomain "$host"; }; then
+        echo "Not a valid IP or hostname set for ${name} host, please check the env file (currently it is \"${host})\"!"
+        return 1
+    fi
+}
+
+check_valid_port() {
+    local port="$1"
+    local name="$2"
+
+    if [[ -z "$port" ]] || ! [[ "$port" =~ ^[0-9]+$ ]] || (( port < 1 || port > 65535 )); then
+        echo "Please set a valid ${name} port number! Current value is \"${port}\"!"
+        return 1
+    fi
+}
+
 set_default_vars() {
 
   [[ "${USESYSVARS}" != "Y" ]] && unset CNODE_HOME
@@ -949,6 +901,7 @@ set_default_vars() {
   CNODE_VNAME=$(tr '[:upper:]' '[:lower:]' <<< ${CNODE_NAME//_HOME/})
   CNODE_VNAME_UPPERCASE=$(tr '[:lower:]' '[:upper:]' <<< ${CNODE_VNAME})
   [[ -z "${CNODE_PORT}" ]] && CNODE_PORT=6000
+  [[ -z "${PROM_TIMEOUT}" ]] && PROM_TIMEOUT=3
   [[ -z ${UPDATE_CHECK} ]] && UPDATE_CHECK="Y"
   [[ -z ${TOPOLOGY} ]] && TOPOLOGY="${CNODE_HOME}/files/topology.json"
   [[ -n ${CNODE_TOPOLOGY} ]] && TOPOLOGY="${CNODE_TOPOLOGY}" # compatibility with older topologyUpdater
@@ -1122,8 +1075,9 @@ fi
 node_version="$(${CNODEBIN} version | head -1 | cut -d' ' -f2)"
 cli_version="$(${CCLI} version | head -1 | cut -d' ' -f2)"
 
-if ! versionCheckNode "10.4.1" "${node_version}" || ! versionCheckNode "10.11.0.0" "${cli_version}"; then
-  echo -e "\nKoios scripts have now been upgraded to support cardano-node 10.4.1 ('${node_version}' found) / cardano-cli 10.11.x.x ('${cli_version}' found).\nPlease update cardano-node binaries (ensure to read release notes and update various configs using guild-deploy (use appropriate options to download/install/overwrite parts you need) or use tagged branches for older node version (eg: ./<script>.sh -b node-10.1.4 to switch scripts to an older branch).\n\n"
+if ! versionCheckNode "10.5.2" "${node_version}" || ! versionCheckNode "10.11.0.0" "${cli_version}"; then
+  echo -e "\nKoios scripts have now been upgraded to support cardano-node 10.5.x ('${node_version}' found) / cardano-cli 10.11.x.x ('${cli_version}' found).\nPlease update cardano-node binaries (ensure to read release notes and update various configs using guild-deploy (use appropriate options to download/install/overwrite parts you need) or use tagged branches for older node version (eg: ./<script>.sh -b node-10.1.4 to switch scripts to an older branch).\n"
+  echo -e "  Refer to https://cardano-community.github.io/guild-operators/upgrade/ for upgrade assistance!\n\n"
   return 1
 fi
 
@@ -1166,71 +1120,51 @@ if ! command -v "jq" &>/dev/null; then
   return 1
 fi
 
-read -ra CONFIG_CONTENTS <<<"$(jq -r '[ .AlonzoGenesisFile //"null", .ByronGenesisFile //"null", .ShelleyGenesisFile //"null", .Protocol //"Cardano", .TraceChainDb //"null", .EnableP2P //"false", .ConwayGenesisFile //"null"]| @tsv' "${CONFIG}" 2>/dev/null)"
-if [[ ${CONFIG_CONTENTS[4]} != "true" ]]; then
-  echo "Could not find TraceChainDb when attempting to parse ${CONFIG} file in JSON format, please double-check the syntax of your config, or simply download it from guild-operators repository!"
-  return 1
+read -ra CONFIG_CONTENTS <<<"$(jq -r '[ .AlonzoGenesisFile //"null", .ByronGenesisFile //"null", .ShelleyGenesisFile //"null", .Protocol //"Cardano",
+.EnableP2P //"false",
+.ConwayGenesisFile //"null"]| @tsv' "${CONFIG}" 2>/dev/null)"
+
+CONWAY_GENESIS_JSON="${CONFIG_CONTENTS[5]}"
+ALONZO_GENESIS_JSON="${CONFIG_CONTENTS[0]}"
+BYRON_GENESIS_JSON="${CONFIG_CONTENTS[1]}"
+GENESIS_JSON="${CONFIG_CONTENTS[2]}"
+# if relative path is used, assume same parent dir as config
+[[ ! ${CONWAY_GENESIS_JSON} =~ ^/ ]] && CONWAY_GENESIS_JSON="$(dirname "${CONFIG}")/${CONWAY_GENESIS_JSON}"
+[[ ! ${ALONZO_GENESIS_JSON} =~ ^/ ]] && ALONZO_GENESIS_JSON="$(dirname "${CONFIG}")/${ALONZO_GENESIS_JSON}"
+[[ ! ${BYRON_GENESIS_JSON} =~ ^/ ]] && BYRON_GENESIS_JSON="$(dirname "${CONFIG}")/${BYRON_GENESIS_JSON}"
+[[ ! ${GENESIS_JSON} =~ ^/ ]] && GENESIS_JSON="$(dirname "${CONFIG}")/${GENESIS_JSON}"
+# if genesis files not found, exit with rc 1
+[[ ! -f "${CONWAY_GENESIS_JSON}" ]] && echo "Conway genesis file not found: ${CONWAY_GENESIS_JSON}" && return 1
+[[ ! -f "${ALONZO_GENESIS_JSON}" ]] && echo "Alonzo genesis file not found: ${ALONZO_GENESIS_JSON}" && return 1
+[[ ! -f "${BYRON_GENESIS_JSON}" ]] && echo "Byron genesis file not found: ${BYRON_GENESIS_JSON}" && return 1
+[[ ! -f "${GENESIS_JSON}" ]] && echo "Shelley genesis file not found: ${GENESIS_JSON}" && return 1
+GENESIS_HASH="$(${CCLI} hash genesis-file --genesis "${GENESIS_JSON}")"
+PROTOCOL="${CONFIG_CONTENTS[3]}"
+P2P_ENABLED="${CONFIG_CONTENTS[4]}"
+
+if [[ -z "$PROM_HOST" || -z "$PROM_PORT" ]]; then
+  PROM_PORT=$(jq -er '
+    (.TraceOptions."".backends // [])
+    | .[]
+    | select(test("(?i)PrometheusSimple"))
+    | split(" ")
+    | ( last // "")
+  ' "$CONFIG")
+  PROM_HOST=$(jq -er '
+    (.TraceOptions."".backends // [])
+    | .[]
+    | select(test("(?i)PrometheusSimple"))
+    | split(" ")
+    | (.[-2] // "")
+    | if test("^[0-9]{1,3}(\\.[0-9]{1,3}){3}$") then . else "127.0.0.1"  end
+  ' "$CONFIG")
+fi
+
+if [[ -n "$PROM_HOST" && -n "$PROM_PORT" ]]; then
+  check_valid_host "$PROM_HOST" "PROM" || return 1
+  check_valid_port "$PROM_PORT" "PROM" || return 1
 else
-  CONWAY_GENESIS_JSON="${CONFIG_CONTENTS[6]}"
-  ALONZO_GENESIS_JSON="${CONFIG_CONTENTS[0]}"
-  BYRON_GENESIS_JSON="${CONFIG_CONTENTS[1]}"
-  GENESIS_JSON="${CONFIG_CONTENTS[2]}"
-  # if relative path is used, assume same parent dir as config
-  [[ ! ${CONWAY_GENESIS_JSON} =~ ^/ ]] && CONWAY_GENESIS_JSON="$(dirname "${CONFIG}")/${CONWAY_GENESIS_JSON}"
-  [[ ! ${ALONZO_GENESIS_JSON} =~ ^/ ]] && ALONZO_GENESIS_JSON="$(dirname "${CONFIG}")/${ALONZO_GENESIS_JSON}"
-  [[ ! ${BYRON_GENESIS_JSON} =~ ^/ ]] && BYRON_GENESIS_JSON="$(dirname "${CONFIG}")/${BYRON_GENESIS_JSON}"
-  [[ ! ${GENESIS_JSON} =~ ^/ ]] && GENESIS_JSON="$(dirname "${CONFIG}")/${GENESIS_JSON}"
-  # if genesis files not found, exit with rc 1
-  [[ ! -f "${CONWAY_GENESIS_JSON}" ]] && echo "Conway genesis file not found: ${CONWAY_GENESIS_JSON}" && return 1
-  [[ ! -f "${ALONZO_GENESIS_JSON}" ]] && echo "Alonzo genesis file not found: ${ALONZO_GENESIS_JSON}" && return 1
-  [[ ! -f "${BYRON_GENESIS_JSON}" ]] && echo "Byron genesis file not found: ${BYRON_GENESIS_JSON}" && return 1
-  [[ ! -f "${GENESIS_JSON}" ]] && echo "Shelley genesis file not found: ${GENESIS_JSON}" && return 1
-  GENESIS_HASH="$(${CCLI} hash genesis-file --genesis "${GENESIS_JSON}")"
-  PROTOCOL="${CONFIG_CONTENTS[3]}"
-  P2P_ENABLED="${CONFIG_CONTENTS[5]}"
-fi
-
-[[ -z ${EKG_TIMEOUT} ]] && EKG_TIMEOUT=3
-[[ -z ${EKG_HOST} ]] && EKG_HOST=127.0.0.1
-if ! isValidIPv4 "${EKG_HOST}" && ! isValidHostnameOrDomain "${EKG_HOST}"; then
-  echo "Not a valid IP or hostname set for EKG host, please check the env file (currently it is ${EKG_HOST})!"
-  return 1
-fi
-
-if [[ -z ${EKG_PORT} ]]; then
-  if ! EKG_PORT=$(jq -er '.hasEKG | if .|type=="array" then .[1] else . end' "${CONFIG}" 2>/dev/null); then
-    if [[ ${OFFLINE_MODE} = "N" ]]; then
-      echo "Could not get 'hasEKG' port in ${CONFIG}"
-      return 1
-    fi
-  fi
-elif [[ ! ${EKG_PORT} =~ ^[0-9]+$ ]]; then
-  echo "Please set a valid EKG port number in env file! Current value is ${EKG_PORT} !"
-  return 1
-fi
-
-if [[ -z ${PROM_HOST} ]]; then PROM_HOST=$(jq -er '.hasPrometheus[0]' "${CONFIG}" 2>/dev/null) || PROM_HOST=127.0.0.1; fi
-
-if [[ ${PROM_HOST} =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-  IFS='.' read -ra PROM_OCTETS <<< ${PROM_HOST}
-  if ! [[ ${PROM_OCTETS[0]} -le 255 && ${PROM_OCTETS[1]} -le 255 && ${PROM_OCTETS[2]} -le 255 && ${PROM_OCTETS[3]} -le 255 ]]; then
-    echo "Not a valid IP range set for Prometheus host, please check env file for value of PROM_HOST (currently it is set to ${PROM_HOST} )!"
-    return 1
-  fi
-else
-  echo "Not a valid IP format set for Prometheus host, please check env file!"
-  return 1
-fi
-if [[ -z ${PROM_PORT} ]]; then
-  if ! PROM_PORT=$(jq -er '.hasPrometheus[1]' "${CONFIG}" 2>/dev/null); then
-    if [[ ${OFFLINE_MODE} = "N" ]]; then
-      echo "Could not get 'hasPrometheus' port in ${CONFIG}"
-      return 1
-    fi
-  fi
-elif [[ ! ${PROM_PORT} =~ ^[0-9]+$ ]]; then
-  echo "Please set a valid Prometheus port number in env file! Current value is ${PROM_PORT} !"
-  return 1
+  echo "Could not find Prometheus Host and Port in the provided config. Please double-check and ensure config file is setup as per guild-operators provided example!" && return 1
 fi
 
 [[ -z ${BLOCKLOG_DIR} ]] && BLOCKLOG_DIR="${CNODE_HOME}/guild-db/blocklog"
@@ -1239,22 +1173,8 @@ BLOCKLOG_DB="${BLOCKLOG_DIR}/blocklog.db"
 [[ -z ${CNODE_PORT} ]] && CNODE_PORT=6000
 [[ -z "${IP_VERSION}" ]] && IP_VERSION=4
 IP_VERSION=$(tr '[:upper:]' '[:lower:]' <<< "${IP_VERSION}")
-[[ -z ${USE_EKG} ]] && USE_EKG='Y'
-CNODE_PID=$(pgrep -fn "$(basename ${CNODEBIN}).*.--port ${CNODE_PORT}")
 
-if [[ ${OFFLINE_MODE} = "N" && -n "${CNODE_PID}" ]]; then
-  if [[ "${USE_EKG}" == "N" ]]; then
-    if { [[ "${use_lsof}" != 'Y' && -z "$(ss -lnpt | grep "pid=${CNODE_PID}," | awk -v port=":${PROM_PORT}" '$4 ~ port {print $4}')" ]]; } || { [[ "${use_lsof}" == 'Y' && -z "$(lsof -Pnl -i4 +M | grep LISTEN | awk -v pid="${CNODE_PID}" -v port=":${PROM_PORT}" '$2 == pid && $9 ~ port {print $9}')" ]]; }; then
-      echo "ERROR: You specified ${PROM_PORT} as your Prometheus port, but it looks like the cardano-node (PID: ${CNODE_PID} ) is not listening on this port. Please update the config or kill the conflicting process first."
-      return 1
-    fi
-  else
-    if { [[ "${use_lsof}" != 'Y' && -z "$(ss -lnpt | grep "pid=${CNODE_PID}," | awk -v port=":${EKG_PORT}" '$4 ~ port {print $4}')" ]]; } || { [[ "${use_lsof}" == 'Y' && -z "$(lsof -Pnl -i4 +M | grep LISTEN | awk -v pid="${CNODE_PID}" -v port=":${EKG_PORT}" '$2 == pid && $9 ~ port {print $9}')" ]]; }; then
-      echo "ERROR: You specified ${EKG_PORT} as your EKG port, but it looks like the cardano-node (PID: ${CNODE_PID} ) is not listening on this port. Please update the config or kill the conflicting process first."
-      return 1
-    fi
-  fi
-fi
+CNODE_PID=$(pgrep -fn "$(basename ${CNODEBIN}).*.--port ${CNODE_PORT}")
 
 read_genesis
 
