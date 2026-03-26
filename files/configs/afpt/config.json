@@ -17,7 +17,7 @@
   "MempoolCapacityBytesOverride": 8388608,
   "MinBigLedgerPeersForTrustedState": 5,
   "MinNodeVersion": "10.6.2",
-  "PeerSharing": false,
+  "PeerSharing": true,
   "Protocol": "Cardano",
   "RequiresNetworkMagic": "RequiresMagic",
   "ShelleyGenesisFile": "/opt/cardano/cnode/files/shelley-genesis.json",

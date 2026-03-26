@@ -390,7 +390,6 @@ build_libblst() {
 # Download cardano-node, cardano-cli, cardano-db-sync, bech32 and cardano-submit-api
 # TODO: Replace these with self-hosted ones (potentially consider snapshots.koios.rest as upload destination for CI)
 download_cnodebins() {
-  [[ -z ${ARCH##*aarch64*} ]] && err_exit "  The build archives are not available for ARM, you might need to build them!"
   echo -e "\nDownloading binaries.."
   pushd "${HOME}"/tmp >/dev/null || err_exit
   echo -e "\n  Downloading Cardano Node ${CARDANO_NODE_VERSION} archive from GitHub.."
@@ -413,7 +412,7 @@ download_cnodebins() {
   if [[ "${SKIP_DBSYNC_DOWNLOAD}" == "N" ]]; then
     echo -e "\n  Downloading Cardano DB Sync 13.7.0.1 archive from share.koios.rest.."
     curl -m 200 -sfL "https://share.koios.rest/api/public/dl/xFdZDfM4/bin/cardano-db-sync-13.7.0.1-$(uname -m).tar.gz" -o cnodedbsync.tar.gz || err_exit "  Could not download cardano-db-sync from release artefacts on GitHub!"
-    tar zxf cnodedbsync.tar.gz --strip-components 1 ./cardano-db-sync &>/dev/null
+    tar zxf cnodedbsync.tar.gz --strip-components 1 ./bin/cardano-db-sync &>/dev/null
     [[ -f cardano-db-sync ]] || err_exit " cardano-db-sync archive downloaded but binary (cardano-db-sync) not found after extracting package!"
     rm -f cnodedbsync.tar.gz
     mv -f -t "${HOME}"/.local/bin cardano-db-sync
